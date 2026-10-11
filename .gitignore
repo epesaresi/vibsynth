@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.venv/
+venv/
+
+# vibsynth outputs (projects, results, logs)
+*.vsproj
+*.log
+benchmark.json
+test.mat
+test.png
+
+# Measured data: keep it out of the repository unless you own it and want to share it
+data/
+private/
+*.xlsx
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

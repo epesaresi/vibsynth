@@ -1,0 +1,58 @@
+"""One call from a target (record, specification or mission) to a test profile."""
+from __future__ import annotations
+
+from . import synthesis as S
+from .analysis import Reference
+
+__all__ = ["run_method"]
+
+
+def run_method(ref: Reference, method: str, duration: float, *, kurtosis=None, rms=None,
+               pattern=None, seed=None, iterations=30, tol=0.05, window=None, fs=None,
+               tones=None, prominence_db=10.0, drift=0.0, log=None):
+    """Synthesise `duration` seconds that reproduce the target.
+
+    kurtosis / rms default to the target values. For the kurtosis-control
+    methods (mlv, vsd, pm) the FDS is not imposed; their FDS is compared with
+    the target over the same duration. `fs` defaults to the target's rate.
+    """
+    m = method.lower()
+    fs = fs or ref.fs
+    k = kurtosis if kurtosis else ref.stats["kurtosis"]
+    segs = ref.segments or None
+    common = dict(seed=seed, log=log)
+    fdskw = dict(correction_iterations=iterations, tol=tol, **common)
+    if m == "gaussian":
+        return S.gaussian(ref.fds, duration, fs, ref.params, **fdskw)
+    if m == "kfds":
+        return S.kfds(ref.fds, duration, fs, ref.params, k, segments=segs, pattern=pattern,
+                      window=window, **fdskw)
+    if m == "rf":
+        return S.rf(ref.fds, duration, fs, ref.params, rms if rms else ref.stats["rms"],
+                    segments=segs, pattern=pattern, window=window, **fdskw)
+    if m == "pf":
+        return S.pf(ref.fds, duration, fs, ref.params, ref.psd_f, ref.psd, window=window, **fdskw)
+    if m == "psf":
+        return S.psf(ref.fds, duration, fs, ref.params, ref.psd_f, ref.psd, ref.life,
+                     window=window, **fdskw)
+    if m == "mrs":
+        return S.mrs_control(ref.mrs, duration, fs, ref.params, **fdskw)
+    if m == "sor":
+        if tones is None:
+            tones = S.detect_tones(ref.psd_f, ref.psd, ref.params.fn[0], ref.params.fn[-1],
+                                   prominence_db=prominence_db)
+            if log:
+                log("detected tones: " + (", ".join(f"{f:.1f} Hz ({a:.3g})" for f, a in tones) or "none"))
+        return S.sine_on_random(ref.fds, duration, fs, ref.params, tones, ref.life, drift=drift, **fdskw)
+    if m == "mlv":
+        res = S.mlv(ref.psd_f, ref.psd, duration, fs, k, segments=segs, pattern=pattern,
+                    window=window, **common)
+    elif m == "vsd":
+        res = S.vsd(ref.psd_f, ref.psd, duration, fs, k, fmin=ref.params.fn[0],
+                    fmax=ref.params.fn[-1], window=window, **common)
+    elif m == "pm":
+        res = S.pm(ref.psd_f, ref.psd, duration, fs, k, block=window, **common)
+    else:
+        raise ValueError(f"unknown method {method!r}; choose from {', '.join(S.METHODS)}")
+    res.info["fds_target_scale"] = duration * res.repeats / ref.life
+    return res

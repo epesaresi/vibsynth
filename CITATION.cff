@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it, and the dissertation that introduced the methods."
+title: "vibsynth: mission synthesis and kurtosis control for accelerated vibration testing"
+type: software
+version: 2.0.0
+date-released: 2026-10-11
+license: MIT
+authors:
+  - family-names: Pesaresi
+    given-names: Emanuele
+keywords:
+  - vibration testing
+  - fatigue damage spectrum
+  - mission synthesis
+  - kurtosis
+  - non-Gaussian random vibration
+  - accelerated life testing
+preferred-citation:
+  type: thesis
+  title: "Advanced Mission Synthesis Algorithms for Vibration-based Accelerated Life-testing"
+  authors:
+    - family-names: Pesaresi
+      given-names: Emanuele
+  thesis-type: "PhD dissertation"
+  institution:
+    name: "Alma Mater Studiorum, University of Bologna"
+  year: 2021
+  url: "https://amsdottorato.unibo.it/id/eprint/9647/"

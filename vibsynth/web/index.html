@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>vibsynth</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header>
+  <div class="brand">vibsynth <span id="ver"></span></div>
+  <nav id="tabs">
+    <button data-tab="records" class="on">Records</button>
+    <button data-tab="analysis">Analysis</button>
+    <button data-tab="specs">Specifications</button>
+    <button data-tab="mission">Missions</button>
+    <button data-tab="synth">Synthesis</button>
+    <button data-tab="project">Project</button>
+  </nav>
+  <button id="modelchip" class="chip" title="damage model used everywhere">Damage model</button>
+</header>
+
+<section id="model" class="drawer" hidden>
+  <div class="grid6">
+    <label>f min [Hz]<input data-s="fmin"></label>
+    <label>f max [Hz]<input data-s="fmax" placeholder="fs/2.5"></label>
+    <label>Scale<select data-s="scale"><option value="octave">1/n octave</option><option value="linear">linear</option></select></label>
+    <label>Points / octave<input data-s="ppo"></label>
+    <label>Linear step [Hz]<input data-s="resolution"></label>
+    <label>Q (ζ = 1/2Q)<input data-s="Q"></label>
+    <label>b (Wöhler)<input data-s="b"></label>
+    <label>C<input data-s="C"></label>
+    <label>K<input data-s="K"></label>
+    <label>Pre-filter<select data-s="prefilter"><option value="auto">auto (fs &le; 10 fmax)</option><option value="true">on</option><option value="false">off</option></select></label>
+    <label>FDS method<select data-s="fds_method"><option value="time">time domain, rainflow</option><option value="fast">fast (Appendix F)</option><option value="frequency">frequency domain (Gaussian)</option></select></label>
+    <label>PSD resolution [Hz]<input data-s="psd_resolution"></label>
+    <label>fs for specifications [Hz]<input data-s="spec_fs"></label>
+  </div>
+  <div class="row"><button id="savemodel">Apply</button><span class="hint">Changing the model invalidates computed targets; they are recomputed on demand.</span></div>
+</section>
+
+<main>
+<!-- RECORDS -->
+<div class="tab" id="tab-records">
+  <section>
+    <h2>Import</h2>
+    <div class="row wrap">
+      <input type="file" id="files" multiple accept=".mat,.csv,.txt,.dat,.npy">
+      <label class="inline">fs [Hz]<input id="imp_fs" placeholder="from time column / file" size="12"></label>
+      <label class="inline">Units<select id="imp_units"><option>m/s^2</option><option>g</option></select></label>
+      <label class="inline">First column is time<select id="imp_time"><option value="auto">auto</option><option value="yes">yes</option><option value="no">no</option></select></label>
+      <button id="btn_import">Import</button>
+    </div>
+    <div id="importdlg"></div>
+    <p class="hint">MAT (v5/v7; v7.3 with h5py), CSV, TXT, NPY. Matrices: one record per column. [time, acceleration] is recognised automatically.</p>
+  </section>
+  <section>
+    <h2>Workspace</h2>
+    <table class="list" id="itemtable"></table>
+  </section>
+  <section id="recdetail" hidden>
+    <h2 id="rec_title"></h2>
+    <div id="ch_rec"></div>
+    <div id="rec_audio"></div>
+    <div class="cols3">
+      <div class="card"><h3>Pre-processing → new record</h3>
+        <div class="grid2">
+          <label>from [s]<input id="pp_t0"></label><label>to [s]<input id="pp_t1"></label>
+          <label>high-pass [Hz]<input id="pp_hp"></label><label>low-pass [Hz]<input id="pp_lp"></label>
+          <label>resample to [Hz]<input id="pp_fs"></label><label>gain<input id="pp_gain"></label>
+          <label>remove mean<input type="checkbox" id="pp_dt"></label><label>name<input id="pp_name"></label>
+        </div>
+        <div class="row"><button class="sec" id="pp_zoom">use zoom range</button><button id="pp_go">Apply</button></div>
+      </div>
+      <div class="card"><h3>Split into situations</h3>
+        <label class="block">cut times [s]<input id="sp_edges" placeholder="e.g. 120 300.5"></label>
+        <div class="row"><button class="sec" id="sp_zoom">add zoom edges</button><button id="sp_go">Split</button></div>
+        <p class="hint">Each piece becomes a record that can be a situation of a mission.</p>
+      </div>
+      <div class="card"><h3>Shaker limits</h3>
+        <div class="grid2">
+          <label>acc [m/s²]<input id="sh_a"></label><label>vel [m/s]<input id="sh_v"></label>
+          <label>stroke p-p [m]<input id="sh_d"></label><label>high-pass [Hz]<input id="sh_hp"></label>
+        </div>
+        <div class="row"><button id="sh_go">Check</button></div>
+        <div id="sh_out" class="small"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ANALYSIS -->
+<div class="tab" id="tab-analysis" hidden>
+  <section>
+    <h2>Fatigue Damage Spectrum, MRS and PSD</h2>
+    <div class="row wrap" id="an_pick"></div>
+    <div class="row"><button id="an_go">Compute / overlay</button><button class="sec" id="an_resp">Response kurtosis and std vs fn</button>
+      <span class="hint">Life [h] of each record is set in the Workspace table (default: record length).</span></div>
+    <div class="cols2"><div id="ch_fds"></div><div id="ch_mrs"></div></div>
+    <div class="cols2"><div id="ch_psd"></div><div id="ch_resp"></div></div>
+    <div id="an_exports" class="row wrap"></div>
+  </section>
+  <section>
+    <h2>Diagnostics of one signal</h2>
+    <div class="row wrap"><label class="inline">Signal<select id="dg_item"></select></label>
+      <label class="inline">window [s]<input id="dg_win" value="1" size="5"></label>
+      <label class="inline">SDOF fn [Hz]<input id="dg_fn" value="50" size="6"></label>
+      <button id="dg_go">Show</button></div>
+    <div class="cols2"><div id="ch_pdf"></div><div id="ch_run"></div></div>
+    <div class="cols2"><div id="ch_spg"></div><div id="ch_sk"></div></div>
+    <div class="cols2"><div id="ch_kg"></div><div id="ch_sdof"></div></div>
+  </section>
+</div>
+
+<!-- SPECIFICATIONS -->
+<div class="tab" id="tab-specs" hidden>
+  <div class="cols2">
+    <section><h2>Random: PSD breakpoints</h2>
+      <label class="block">Name<input id="ps_name" value="PSD specification"></label>
+      <label class="block">f [Hz]   PSD [(m/s²)²/Hz] (one breakpoint per line, straight lines in log-log)
+        <textarea id="ps_pts" rows="7">10 0.1
+20 1
+200 1
+500 0.1</textarea></label>
+      <div class="row"><button class="sec" id="ps_prev">Preview</button><button id="ps_add">Add specification</button><span id="ps_rms" class="hint"></span></div>
+      <div id="ch_ps"></div>
+    </section>
+    <section><h2>Swept sine</h2>
+      <label class="block">Name<input id="ss_name" value="Swept sine"></label>
+      <label class="block">f [Hz]   peak acceleration [m/s²] (breakpoints)
+        <textarea id="ss_pts" rows="4">10 5
+200 5</textarea></label>
+      <div class="grid3"><label>rate<input id="ss_rate" value="1"></label>
+        <label>mode<select id="ss_mode"><option value="log">log (octave/min)</option><option value="linear">linear (Hz/s)</option></select></label>
+        <label>passes<input id="ss_n" value="2"></label></div>
+      <div class="row"><button class="sec" id="ss_prev">Preview</button><button id="ss_add">Add specification</button><span id="ss_dur" class="hint"></span></div>
+      <div id="ch_ss"></div>
+    </section>
+  </div>
+  <section><h2>Specifications in the workspace</h2><table class="list" id="spectable"></table>
+    <p class="hint">A specification can be a synthesis target or a situation of a mission, or be turned into a time history (Generate).</p></section>
+</div>
+
+<!-- MISSIONS -->
+<div class="tab" id="tab-mission" hidden>
+  <section>
+    <h2>Mission</h2>
+    <div class="row wrap"><label class="inline">Mission<select id="ms_pick"></select></label><button class="sec" id="ms_new">New</button>
+      <label class="inline">Name<input id="ms_name"></label><button id="ms_save">Save</button><button id="ms_go">Save and compute</button><button class="sec" id="ms_del">Delete</button></div>
+    <div id="ms_tree"></div>
+    <p class="hint"><b>Series</b>: the component lives through all children (FDS summed, PSD averaged with the lives).
+      <b>Parallel</b>: it lives through one of them (FDS and PSD enveloped). Groups can be nested.</p>
+  </section>
+  <section id="ms_res" hidden>
+    <h2>Mission targets</h2>
+    <div id="ms_stats" class="small"></div>
+    <div class="cols2"><div id="ch_msfds"></div><div id="ch_msmrs"></div></div>
+    <div class="cols2"><div id="ch_mspsd"></div><div id="ch_mscontrib"></div></div>
+    <div class="row" id="ms_exports"></div>
+  </section>
+</div>
+
+<!-- SYNTHESIS -->
+<div class="tab" id="tab-synth" hidden>
+  <div class="cols-side">
+    <section>
+      <h2>Test profile</h2>
+      <label class="block">Target<select id="sy_target"></select></label>
+      <label class="block">Life represented [h]<input id="sy_life" placeholder="default of the target"></label>
+      <label class="block">Method<select id="sy_method"></select></label>
+      <p class="hint" id="sy_mdesc"></p>
+      <div class="grid2">
+        <label>Test duration<input id="sy_dur" value="60"></label>
+        <label>unit<select id="sy_unit"><option value="1">s</option><option value="60">min</option><option value="3600">h</option></select></label>
+        <label>Kurtosis<input id="sy_k" placeholder="= target"></label>
+        <label>RMS (RF)<input id="sy_rms" placeholder="= target"></label>
+        <label>Burst pattern<select id="sy_pat"><option value="">auto</option><option value="reference">from reference</option><option value="bursts">random bursts</option></select></label>
+        <label>Window [s]<input id="sy_win" placeholder="auto"></label>
+        <label>Seed<input id="sy_seed" placeholder="random"></label>
+        <label>Max. corrections<input id="sy_it" value="30"></label>
+        <label>FDS tolerance<input id="sy_tol" value="0.05"></label>
+        <label>fs [Hz]<input id="sy_fs" placeholder="= target"></label>
+        <label>SoR prominence [dB]<input id="sy_prom" value="10"></label>
+        <label>SoR drift<input id="sy_drift" placeholder="0"></label>
+      </div>
+      <details><summary>Batch: several seeds and / or methods</summary>
+        <label class="block">Seeds<input id="sy_seeds" placeholder="e.g. 1 2 3 4 5"></label>
+        <div id="sy_multi" class="checks"></div>
+      </details>
+      <label class="block">Name<input id="sy_name" placeholder="automatic"></label>
+      <div class="row"><button id="sy_go">Synthesise</button></div>
+    </section>
+    <div>
+      <section>
+        <h2>Results</h2>
+        <table class="list" id="restable"></table>
+        <div class="row"><button class="sec" id="rs_cmp">Compare checked</button></div>
+        <div id="ch_cmp"></div>
+      </section>
+      <section id="rs_detail" hidden>
+        <h2 id="rs_title"></h2>
+        <div id="rs_warn"></div>
+        <div class="cols2"><table class="kv" id="rs_tab"></table><div id="ch_hist"></div></div>
+        <div id="ch_rs_time"></div>
+        <div id="rs_audio"></div>
+        <div class="cols2"><div id="ch_rs_fds"></div><div id="ch_rs_mrs"></div></div>
+        <div class="cols2"><div id="ch_rs_psd"></div><div id="ch_rs_rms"></div></div>
+        <div class="row wrap">
+          <label class="inline">Time history<select id="rs_fmt"><option>mat</option><option>csv</option><option>txt</option><option>npy</option><option>wav</option></select></label><button id="rs_dl">Download</button>
+          <label class="inline">Comparison curves<select id="rs_cfmt"><option>csv</option><option>xlsx</option><option>mat</option><option>json</option></select></label><button id="rs_cdl">Download</button>
+          <button class="sec" id="rs_pdf">Match PDF to target</button>
+        </div>
+        <div class="cols2">
+          <div class="card"><h3>Sensitivity to b and Q (dissertation 4.5)</h3>
+            <div class="grid2"><label>b values<input id="se_b" value="4 6 10 14"></label><label>Q values<input id="se_q" placeholder="e.g. 5 50"></label></div>
+            <div class="row"><button id="se_go">Compute</button></div><div id="ch_sens"></div></div>
+          <div class="card"><h3>Shaker limits</h3>
+            <div class="grid2"><label>acc [m/s²]<input id="rsh_a"></label><label>vel [m/s]<input id="rsh_v"></label>
+              <label>stroke p-p [m]<input id="rsh_d"></label><label>high-pass [Hz]<input id="rsh_hp"></label></div>
+            <div class="row"><button id="rsh_go">Check</button></div><div id="rsh_out" class="small"></div></div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- PROJECT -->
+<div class="tab" id="tab-project" hidden>
+  <div class="cols2">
+    <section><h2>Project</h2>
+      <div class="row wrap"><label class="inline">Name<input id="pj_name" value="project"></label><button id="pj_save">Save project</button>
+        <input type="file" id="pj_file" accept=".vsproj"><button class="sec" id="pj_load">Open project</button><button class="sec" id="pj_new">New (clear)</button></div>
+      <p class="hint">A .vsproj file keeps every record, specification, mission, result, the damage model and the log.</p>
+      <h2>Log</h2><div class="row"><button class="sec" id="lg_show">Show</button><button class="sec" id="lg_dl">Download</button></div>
+      <pre id="lg_txt" class="log"></pre>
+    </section>
+    <section><h2>Methods</h2><div id="methods" class="small"></div>
+      <h2>Chart controls</h2>
+      <p class="small">Drag: zoom to a box (a flat box zooms one axis). Wheel: zoom (Shift: x only, Alt: y only). Right button or Shift + drag: pan. Double click or <i>reset</i>: full view. Click a legend entry to hide / show it. <i>x log</i>, <i>y log</i>: scales. <i>PNG</i>, <i>CSV</i>: save the chart or its visible data. ⤢ enlarges.</p>
+    </section>
+  </div>
+</div>
+</main>
+
+<footer id="jobbar" hidden>
+  <span id="job_title"></span><div class="bar"><i id="job_bar"></i></div><span id="job_last" class="small"></span>
+  <button class="sec" id="job_log">log</button><button class="sec" id="job_cancel">cancel</button>
+  <pre id="job_full" class="log" hidden></pre>
+</footer>
+<div id="toast" hidden></div>
+<script src="/static/chart.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>
