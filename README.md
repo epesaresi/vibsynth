@@ -236,8 +236,8 @@ The methods were developed during my PhD at the University of Bologna. I
 thank Prof. Marco Troncossi and Easting s.r.l.s. for our joint work in those
 years.
 
-I also thank Claude (Anthropic), the AI assistant that translated my original
-MATLAB code into this Python package and helped extend it with the browser
+I also thank Claude (Anthropic), the AI assistant that turned the algorithms of
+my PhD into this Python package and helped extend it with the browser
 interface, the missions and the tests. All algorithms and results were checked
 by me against the dissertation.
 
