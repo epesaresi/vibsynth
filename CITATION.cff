@@ -3,6 +3,8 @@ message: "If you use this software, please cite it, and the dissertation that in
 title: "vibsynth: mission synthesis and kurtosis control for accelerated vibration testing"
 type: software
 version: 2.0.0
+doi: 10.5281/zenodo.23298865
+repository-code: "https://github.com/epesaresi/vibsynth"
 date-released: 2026-10-11
 license: MIT
 authors:

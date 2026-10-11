@@ -1,5 +1,9 @@
 # vibsynth
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23298865.svg)](https://doi.org/10.5281/zenodo.23298865)
+[![tests](https://github.com/epesaresi/vibsynth/actions/workflows/tests.yml/badge.svg)](https://github.com/epesaresi/vibsynth/actions/workflows/tests.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 **Accelerated vibration test synthesis in Python.** vibsynth turns measured
 vibration (or a specification, or a whole multi-situation mission) into a
 shorter shaker test profile that produces the same fatigue damage, while also
@@ -214,12 +218,17 @@ settings, full table in `docs/benchmark_thesis_record.json`:
 
 ## Citing
 
-If vibsynth is useful in your work, please cite the dissertation (the
-`CITATION.cff` file gives GitHub's "Cite this repository" button):
+If vibsynth is useful in your work, please cite the dissertation that
+introduced the methods and, for the software itself, the archived release
+(GitHub's "Cite this repository" button gives both formats):
 
 > E. Pesaresi, *Advanced Mission Synthesis Algorithms for Vibration-based
 > Accelerated Life-testing*, PhD dissertation, Alma Mater Studiorum, University
 > of Bologna, 2021. https://amsdottorato.unibo.it/id/eprint/9647/
+
+> E. Pesaresi, *vibsynth: mission synthesis and kurtosis control for
+> accelerated vibration testing*, version 2.0.0, Zenodo, 2026.
+> https://doi.org/10.5281/zenodo.23298865
 
 ## Acknowledgements
 
