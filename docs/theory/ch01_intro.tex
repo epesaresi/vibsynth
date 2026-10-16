@@ -1,0 +1,78 @@
+\section{Purpose, scope and notation}\label{sec:intro}
+
+\subsection{What the package does}
+
+A component mounted on a vehicle, a machine or a package is shaken during its life. The acceleration
+at its base is measured (a \emph{record}), or prescribed by a \emph{specification}, or described by a
+\emph{mission}: a list of situations (road types, operating conditions) with the time spent in each.
+An accelerated vibration test reproduces, on a shaker and in a shorter time $T$, the fatigue damage
+that the life of duration $\Tl$ would cause. \code{vibsynth} computes the acceleration time history
+$x(t)$ of such a test (the \emph{test profile}).
+
+The fatigue damage is described by the Fatigue Damage Spectrum (FDS, Section~\ref{sec:fds}): the
+damage that the vibration causes in a family of single-degree-of-freedom oscillators with different
+natural frequencies. Two signals with the same FDS damage every lightly damped component in the same
+way, whatever its natural frequency. Every synthesis method of the package (Parts~II and~III)
+therefore starts from the target FDS and builds a signal with that FDS; the methods differ in what
+they prescribe besides the FDS: the kurtosis of the signal, its RMS value, its power spectral density,
+tonal components, or, in MMVSD, the kurtosis of the response of every oscillator.
+
+\subsection{How to read this manual}
+
+The manual is written so that it can be followed without paper and pencil. Each symbol is defined at
+the place where it first appears, and each derivation shows all intermediate steps. Results that are
+used later are collected in boxes like this one:
+
+\begin{result}[Example of a result box]
+A boxed equation is a result that later sections refer to.
+\end{result}
+
+Three results are taken from the literature without derivation, because they are an empirical fit or
+classical theorems: Dirlik's distribution of rainflow ranges, the central limit theorem and the
+statistical properties of Welch's PSD estimate (Appendix~\ref{app:quoted}). They are stated precisely
+and their role is explained. Everything else is derived here.
+
+\subsection{Notation}
+
+\begin{center}
+\begin{tabular}{>{$}l<{$} p{0.72\textwidth}}
+\toprule
+t & time [s] \\
+f,\ \omega = 2\pi f & frequency [Hz] and angular frequency [rad/s] \\
+x(t) & base acceleration: the record or the test profile [m/s$^2$] \\
+f_s,\ \Delta t = 1/f_s & sampling frequency and sampling interval \\
+N,\ T = N\Delta t & number of samples and duration of a signal \\
+\Tl & life represented by a target (the duration of use that the test must reproduce) \\
+\E[\cdot] & expectation (average over all realisations of a random process) \\
+\tavg{\cdot} & time average over the duration of a signal, $\tavg{g} = \frac1T\int_0^T g(t)\,\dd t$ \\
+\sigma^2,\ \sigma & variance and standard deviation (RMS value of a zero-mean signal) \\
+\kappa & kurtosis (Pearson definition, 3 for a Gaussian variable); $\kappa_z(\fn)$ is called
+  \code{k\_z} in the program \\
+G(f) & one-sided power spectral density (PSD) [(m/s$^2$)$^2$/Hz] \\
+\fn,\ \wn = 2\pi\fn & natural frequency of an oscillator \\
+Q,\ \zeta = 1/(2Q) & quality factor and damping ratio \\
+z(t) & relative displacement of an oscillator (base minus mass) [m] \\
+H(f) & frequency response from base acceleration to relative displacement \\
+b,\ C,\ K & Basquin exponent, Basquin constant, stress per unit relative displacement \\
+D(\fn) & Fatigue Damage Spectrum (FDS) \\
+\mathrm{MRS}(\fn) & Maximum Response Spectrum \\
+\Gamma(\cdot) & Euler's Gamma function, $\Gamma(s) = \int_0^\infty u^{s-1}e^{-u}\,\dd u$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The natural frequencies at which the FDS is evaluated form a grid $f_{\mathrm{n},1} <
+f_{\mathrm{n},2} < \dots < f_{\mathrm{n},n}$ (the \emph{nodes}). By default the grid has 12 points per
+octave: $f_{\mathrm{n},i} = f_{\min}\,2^{(i-1)/12}$, the last node being moved exactly to $f_{\max}$.
+A linear grid with a constant step is also available. An index $i$ (or $j$) always runs over the
+nodes, so that a quantity defined at every node, such as $D_i = D(f_{\mathrm{n},i})$, is a vector of
+length $n$.
+
+\subsection{Organisation}
+
+Part~I (Sections~\ref{sec:signals}--\ref{sec:damage}) introduces random signals, the oscillator and
+fatigue damage. Part~II (Sections~\ref{sec:synthesis}--\ref{sec:methods}) explains how a profile with
+a prescribed FDS is designed, synthesised and corrected, and the methods of version~2.0. Part~III
+(Sections~\ref{sec:mmvsdmodel}--\ref{sec:lines}) derives MMVSD and its treatment of
+sine-on-random blocks. Section~\ref{sec:practice} relates the theory to the settings of the program,
+and Section~\ref{sec:diagnostics} defines the diagnostics and checks of the interface.

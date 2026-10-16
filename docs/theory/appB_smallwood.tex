@@ -1,0 +1,131 @@
+\section{The ramp-invariant oscillator filter}\label{app:smallwood}
+
+This appendix derives the coefficients of the recursion~\eqref{eq:recursion} (the ramp-invariant
+filter, after Smallwood). Throughout, $\omega = \wn$, $\wdm = \omega\sqrt{1-\zeta^2}$ is the damped
+natural angular frequency, and the symbol $q$ denotes the variable of the $z$-transform (the letter $z$
+is the relative displacement).
+
+\subsection*{B.1 The input between samples}
+
+Assume that the base acceleration varies linearly between consecutive samples. With the triangle
+function $\Lambda(\theta) = \max(0,1-|\theta|)$, which is 1 at $\theta=0$, 0 at $\theta=\pm1$ and linear
+in between,
+\begin{equation}
+  x(t) = \sum_k x_k\,\Lambda\!\left(\frac{t}{\Delta t}-k\right)
+\end{equation}
+is exactly the linear interpolation of the samples. The oscillator is linear and time invariant, so
+its response at the sampling instants is
+\begin{equation}\label{eq:B1}
+  z_l = z(l\Delta t) = \sum_k x_k\,\gamma_{l-k},
+\end{equation}
+where $\gamma_l$ is the response, at $t = l\Delta t$, to the single triangle $\Lambda(t/\Delta t)$ centred
+at $t=0$, starting from rest.
+
+\subsection*{B.2 The triangle as a combination of ramps}
+
+Let $r(t) = t$ for $t\ge0$ and $0$ for $t<0$ (a unit ramp starting at 0). Then
+\begin{equation}
+  \Lambda(t/\Delta t) = \frac{1}{\Delta t}\bigl[r(t+\Delta t) - 2r(t) + r(t-\Delta t)\bigr].
+\end{equation}
+Check on the four intervals: for $t\le-\Delta t$ all ramps are zero; for $-\Delta t\le t\le0$ only
+the first is active and gives $(t+\Delta t)/\Delta t$, rising from 0 to 1; for $0\le t\le\Delta t$ it
+gives $(t+\Delta t-2t)/\Delta t = (\Delta t-t)/\Delta t$, falling from 1 to 0; for $t\ge\Delta t$ it
+gives $(t+\Delta t-2t+t-\Delta t)/\Delta t = 0$. By linearity, if $\rho(t)$ is the response to the ramp
+$r(t)$,
+\begin{equation}\label{eq:B2}
+  \gamma_l = \frac{1}{\Delta t}\bigl[\rho_{l+1} - 2\rho_l + \rho_{l-1}\bigr],\qquad \rho_l = \rho(l\Delta t),
+\end{equation}
+with $\rho_l = 0$ for $l\le0$.
+
+\subsection*{B.3 The ramp response}
+
+$\rho$ solves $\ddot\rho + 2\zeta\omega\dot\rho + \omega^2\rho = t$ for $t\ge0$ with $\rho(0) =
+\dot\rho(0) = 0$. A particular solution is $\rho_p = t/\omega^2 - 2\zeta/\omega^3$: indeed $\dot\rho_p =
+1/\omega^2$, $\ddot\rho_p = 0$, and $2\zeta\omega/\omega^2 + \omega^2(t/\omega^2 - 2\zeta/\omega^3) =
+2\zeta/\omega + t - 2\zeta/\omega = t$. The homogeneous solutions are $e^{-\zeta\omega t}(A\cos\wdm t +
+B\sin\wdm t)$. The initial conditions give
+\begin{align}
+  \rho(0) &= -\frac{2\zeta}{\omega^3} + A = 0 &&\Rightarrow\quad A = \frac{2\zeta}{\omega^3},\\
+  \dot\rho(0) &= \frac{1}{\omega^2} - \zeta\omega A + \wdm B = 0 &&\Rightarrow\quad
+  B = \frac{\zeta\omega A - 1/\omega^2}{\wdm} = \frac{2\zeta^2-1}{\omega^2\wdm}.
+\end{align}
+Hence, for $t\ge0$,
+\begin{equation}
+  \rho(t) = \frac{t}{\omega^2} - \frac{2\zeta}{\omega^3}
+  + e^{-\zeta\omega t}\left[\frac{2\zeta}{\omega^3}\cos\wdm t + \frac{2\zeta^2-1}{\omega^2\wdm}\sin\wdm t\right].
+\end{equation}
+
+\subsection*{B.4 $z$-transforms}
+
+Write $E = e^{-\zeta\omega\Delta t}$, $c = \cos\wdm\Delta t$, $s = \sin\wdm\Delta t$ and $w = q^{-1}$.
+The transform of a sequence $u_l$ ($l\ge0$) is $U(q) = \sum_{l\ge0}u_lq^{-l}$. Four transforms are
+needed.
+\begin{itemize}[nosep]
+\item $u_l = 1$: the geometric series $\sum_lw^l = \frac{1}{1-w}$.
+\item $u_l = l\Delta t$: differentiating the geometric series, $\sum_l lw^l = w\frac{\dd}{\dd w}\frac{1}{1-w} =
+\frac{w}{(1-w)^2}$, so the transform is $\frac{\Delta t\,w}{(1-w)^2}$.
+\item $u_l = E^l\cos(l\wdm\Delta t)$ and $u_l = E^l\sin(l\wdm\Delta t)$: they are the real and imaginary
+parts of $(Ee^{\ii\wdm\Delta t})^l$, whose transform is $\frac{1}{1-Ee^{\ii\wdm\Delta t}w}$. Multiplying
+numerator and denominator by $1-Ee^{-\ii\wdm\Delta t}w$, the denominator becomes
+$(1-Ee^{\ii\wdm\Delta t}w)(1-Ee^{-\ii\wdm\Delta t}w) = 1-2Ecw+E^2w^2 =: \mathcal D(w)$ and the
+numerator $1-Ee^{-\ii\wdm\Delta t}w = 1 - Ecw + \ii Esw$. Therefore the transforms are
+$\frac{1-Ecw}{\mathcal D(w)}$ and $\frac{Esw}{\mathcal D(w)}$.
+\end{itemize}
+Applying them to $\rho_l$:
+\begin{equation}
+  R(q) = \frac{\Delta t\,w}{\omega^2(1-w)^2} - \frac{2\zeta}{\omega^3}\,\frac{1}{1-w} + \frac{\mathcal N(w)}{\mathcal D(w)},
+  \qquad \mathcal N(w) = n_0 + n_1w,
+\end{equation}
+with
+\begin{equation}
+  n_0 = \frac{2\zeta}{\omega^3},\qquad n_1 = -\frac{2\zeta}{\omega^3}Ec + \frac{2\zeta^2-1}{\omega^2\wdm}Es .
+\end{equation}
+
+\subsection*{B.5 The transfer function}
+
+By~\eqref{eq:B2}, the transform of $\gamma_l$ is $\Gamma_d(q) = \frac{1}{\Delta t}(q-2+q^{-1})R(q)$
+(a shift by one sample to the left multiplies a transform by $q$, to the right by $q^{-1}$). Since
+$q-2+q^{-1} = q(1-w)^2$:
+\begin{equation}
+  \Delta t\,\Gamma_d(q) = q(1-w)^2R(q) = \frac{\Delta t}{\omega^2} - \frac{2\zeta}{\omega^3}(q-1) + q(1-w)^2\frac{\mathcal N(w)}{\mathcal D(w)},
+\end{equation}
+where $qw = 1$ was used in the first two terms ($q(1-w)^2\cdot\frac{w}{(1-w)^2} = 1$ and
+$q(1-w)^2\cdot\frac{1}{1-w} = q(1-w) = q-1$). Over the common denominator $\mathcal D$, the numerator is
+\begin{equation}
+  \frac{\Delta t}{\omega^2}\mathcal D - \frac{2\zeta}{\omega^3}(q-1)\mathcal D + (q-2+w)(n_0+n_1w).
+\end{equation}
+The two products containing $q$ expand as follows (using $q\mathcal D = q - 2Ec + E^2w$):
+\begin{align}
+  (q-1)\mathcal D &= q - (1+2Ec) + (E^2+2Ec)w - E^2w^2,\\
+  (q-2+w)(n_0+n_1w) &= n_0q + (n_1-2n_0) + (n_0-2n_1)w + n_1w^2 .
+\end{align}
+The terms in $q$ are $-\frac{2\zeta}{\omega^3}q + n_0q = 0$: they cancel, and the filter is causal.
+Collecting the powers of $w$:
+\begin{align}
+  w^0:&\quad \frac{\Delta t}{\omega^2} + \frac{2\zeta}{\omega^3}(1+2Ec) + n_1 - 2n_0
+  = \frac{\Delta t}{\omega^2} + \frac{2\zeta}{\omega^3}(Ec-1) + \frac{2\zeta^2-1}{\omega^2\wdm}Es,\\
+  w^1:&\quad -\frac{2Ec\,\Delta t}{\omega^2} - \frac{2\zeta}{\omega^3}(E^2+2Ec) + n_0 - 2n_1
+  = -\frac{2Ec\,\Delta t}{\omega^2} + \frac{2\zeta}{\omega^3}(1-E^2) - 2\,\frac{2\zeta^2-1}{\omega^2\wdm}Es,\\
+  w^2:&\quad \frac{E^2\Delta t}{\omega^2} + \frac{2\zeta}{\omega^3}E^2 + n_1
+  = \frac{E^2\Delta t}{\omega^2} + \frac{2\zeta}{\omega^3}(E^2 - Ec) + \frac{2\zeta^2-1}{\omega^2\wdm}Es .
+\end{align}
+(In the $w^0$ line: $\frac{2\zeta}{\omega^3}(1+2Ec) - 2n_0 - \frac{2\zeta}{\omega^3}Ec =
+\frac{2\zeta}{\omega^3}(1+2Ec-2-Ec) = \frac{2\zeta}{\omega^3}(Ec-1)$. In the $w^1$ line the terms
+$\mp\frac{4\zeta}{\omega^3}Ec$ cancel.) Dividing by $\Delta t$ and writing every coefficient over
+$\omega^3\Delta t$:
+\begin{result}[Ramp-invariant coefficients]
+\begin{align}
+  b_1 &= \frac{\omega\Delta t + 2\zeta(Ec-1) + \frac{\omega}{\wdm}(2\zeta^2-1)Es}{\omega^3\Delta t},\\
+  b_2 &= \frac{-2\omega\Delta t\,Ec + 2\zeta(1-E^2) - 2\frac{\omega}{\wdm}(2\zeta^2-1)Es}{\omega^3\Delta t},\\
+  b_3 &= \frac{(2\zeta+\omega\Delta t)E^2 + E\bigl(\frac{\omega}{\wdm}(2\zeta^2-1)s - 2\zeta c\bigr)}{\omega^3\Delta t},\\
+  a_1 &= -2Ec,\qquad a_2 = E^2,
+\end{align}
+\end{result}
+and $\Gamma_d(q) = (b_1+b_2q^{-1}+b_3q^{-2})/(1+a_1q^{-1}+a_2q^{-2})$. By~\eqref{eq:B1} the sequence
+$z_l$ is the input sequence filtered by $\Gamma_d$, which is the recursion~\eqref{eq:recursion}.
+
+\emph{Check.} At zero frequency ($q=1$) the gain must be the static deflection $1/\omega^2$.
+Numerically, for $\fn = 20$\,Hz, $Q=10$, $f_s = 500$\,Hz, $(b_1+b_2+b_3)/(1+a_1+a_2) = 6.33257\times10^{-5}$
+and $1/\omega^2 = 6.33257\times10^{-5}$. Inserting $q = e^{\ii\theta}$ gives the frequency
+response~\eqref{eq:Hd}; the program evaluates it in closed form for all nodes and frequencies at once
+and checks it against a direct evaluation of the polynomials.

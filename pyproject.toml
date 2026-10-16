@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vibsynth"
-version = "2.0.0"
-description = "Accelerated vibration test synthesis: Fatigue Damage Spectrum mission synthesis with kurtosis, RMS and PSD control, plus non-Gaussian kurtosis control"
+version = "2.1.0"
+description = "Accelerated vibration test synthesis: Fatigue Damage Spectrum mission synthesis with kurtosis, RMS and PSD control, MMVSD (prescribed kurtosis of the oscillator responses), sine-on-random blocks and non-Gaussian kurtosis control"
 readme = "README.md"
 requires-python = ">=3.9"
 authors = [{ name = "Emanuele Pesaresi" }]
 license = { text = "MIT" }
-keywords = ["vibration", "fatigue damage spectrum", "mission synthesis", "kurtosis", "non-Gaussian", "accelerated testing", "shaker"]
+keywords = ["vibration", "fatigue damage spectrum", "mission synthesis", "kurtosis", "non-Gaussian", "accelerated testing", "shaker", "sine on random", "time-varying PSD"]
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",

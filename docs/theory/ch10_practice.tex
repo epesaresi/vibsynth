@@ -1,0 +1,96 @@
+\section{From the theory to the settings}\label{sec:practice}
+
+\subsection{The damage model}
+
+The damage model (natural frequency grid, $Q$, $b$, $C$, $K$, pre-filter) is shared by all
+computations of a workspace. The FDS of a record is computed by default with the exact procedure of
+Section~\ref{sec:fds} (\code{time}); \code{frequency} uses the Gaussian formula~\eqref{eq:dgauss} on the
+Welch PSD, \code{fast} a self-calibrated approximation. If $f_{\max}>f_s/2.5$ the record is first
+up-sampled by $5/4$, so that every oscillator has at least 2.5 samples per period. The exact
+computation also returns the variance and the kurtosis of every response, $\kappa_z(\fn)$, in the same
+pass; the program computes the oscillators in parallel (worker processes for long records), and the
+results do not depend on the number of workers.
+
+\subsection{Choosing a method}
+
+\begin{center}
+\begin{tabular}{p{0.52\textwidth}p{0.38\textwidth}}
+\toprule
+Situation & Method \\
+\midrule
+Only the damage matters; a Gaussian test is acceptable & \code{gaussian} \\
+Leptokurtic record, one kurtosis for the whole signal & \code{kfds} \\
+The test must keep the RMS of the field & \code{rf} \\
+The test must keep the PSD (shape) of the field & \code{pf}, \code{psf} \\
+Stationary tonal lines over the whole record & \code{sor} \\
+Kurtosis of the responses different in different bands; lines in some blocks only; bursts at the
+right time & \code{mmvsd} \\
+Peak severity (shock-like environments) & \code{mrs} \\
+Kurtosis control without damage equivalence & \code{mlv}, \code{vsd}, \code{pm} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{MMVSD settings}
+
+\begin{center}
+\begin{tabular}{p{0.24\textwidth}p{0.20\textwidth}p{0.46\textwidth}}
+\toprule
+Interface & Command line & Meaning \\
+\midrule
+Modulation & \code{--modulation} & \code{random}: the field of Section~\ref{sec:field} with the burst
+statistics of the target; \code{pattern}: the time--frequency pattern of the record
+(Section~\ref{sec:pattern}) \\
+Shorter test: mapping & \code{--mapping} & \code{blocks} or \code{compress} (Section~\ref{sec:pattern}) \\
+Block length & \code{--block} & length of the blocks of the \code{blocks} mapping (default: 4\,s or five
+burst durations) \\
+Sine-on-random blocks & \code{--lines} & \code{lines}: detected lines as deterministic sines
+(Section~\ref{sec:lines}); \code{random}: detected but left in the random part; \code{off} \\
+Burst width / duration & \code{--freq-corr}, \code{--time-corr} & $B$ in octaves and $T_c$ in
+seconds (Section~\ref{sec:structure}); estimated from the record by default \\
+Max.\ modulation excess & \code{--max-excess} & cap $e_{\max}$ of the depth (default 30) \\
+Design anchor & \code{--anchor} & pull of the level towards the design at the oscillators whose
+damage comes from another band (default 0) \\
+Max.\ corrections, tolerance & \code{--iterations}, \code{--tol} & budget and stopping tolerance of
+the closed loop \\
+Seed & \code{--seed} & the random numbers of the field and of the frames: the same seed gives the
+same profile \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+For a mission or a specification there is no single record: the target $\kappa_z$ is the mixture
+of Section~\ref{sec:missions}, the burst statistics are estimated on the longest situation, and only
+the random field is available. Lines are detected on single records only.
+
+\subsection{Reading the results}
+
+\begin{itemize}
+\item \emph{FDS error}: the ratio of the rainflow FDS of the profile (times its repetitions) to the
+target, node by node; the maximum and the median of $|{\rm ratio}-1|$ and the share of nodes within
+10\,\% are reported. The maximum is governed by the few oscillators whose damage rests on a few large
+cycles (low natural frequencies, strong modulation); the median shows the overall agreement.
+\item \emph{$\kappa_z$ error}: the median of $|\kappa_{z,\mathrm{profile}}-\kappa_{z,\mathrm{target}}|$
+over the nodes, computed for every method (it shows, for instance, that a Gaussian test has
+$\kappa_z\approx3$ everywhere).
+\item \emph{MRS ratio}: above 1 the test produces larger peak responses than the target; check it
+against the strength of the component.
+\item \emph{PSD deviation}: the RMS, over the band, of the ratio in dB between the PSD of the profile and
+that of the target.
+\item \emph{Pattern correlation} (pattern mode): Section~\ref{sec:pattern}.
+\item \emph{Warnings}: a level drifted far from the design over a band, a kurtosis target that cannot
+be reached with the maximum depth, bursts shorter than two response times (filtered by the oscillators,
+Section~\ref{sec:papoulis}), lines that exceed the target damage alone or that are not in the mapped
+part of the record.
+\end{itemize}
+
+\subsection{Limits}
+
+The FDS and the response kurtosis describe the damage of linear, lightly damped oscillators with a
+Basquin law; they are only as good as the chosen $Q$ and $b$ (the program computes the sensitivity of
+a result to other values). The kurtosis of the responses is a fourth-moment description: two signals
+with the same $\kappa_z$ can still differ in their largest peaks, which the MRS ratio shows. The
+model of Section~\ref{sec:mmvsdmodel} assumes that the modulation varies slowly along frequency compared
+with the oscillator bandwidth; very narrow bursts in frequency are smoothed. Finally, a test that is
+much shorter than the life compresses the bursts: their duration is kept in the \code{blocks} mapping,
+at the price of leaving out parts of the record.

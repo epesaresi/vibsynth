@@ -1,0 +1,253 @@
+\section{The MMVSD algorithm}\label{sec:mmvsdalg}
+
+\subsection{Frames of several lengths}\label{sec:frames}
+
+The modulated signal is built from short pieces of noise, \emph{frames}, each with its own spectrum
+$m(f,t_\ell)$. A frame of length $L$ resolves frequency to $1/L$ and time to about $L$: long frames
+are needed at low frequencies (an oscillator needs several cycles in a frame), short ones to follow
+short bursts. The program therefore uses frames whose length grows towards low frequencies.
+
+\emph{Requirements.} Node $i$ needs a hop (the spacing of consecutive frames, half the frame length)
+of at most a third of its burst duration, and frames of at least 8 cycles, i.e.\ a hop of at least
+$4/f_{\mathrm{n},i}$. The hop it gets is the larger of the two, $h_i = \max(T_{c,i}/3,\
+4/f_{\mathrm{n},i})$, made non-increasing towards high frequencies (a cumulative minimum from the
+lowest node up).
+
+\emph{Groups.} The finest hop $h_0 = \min_ih_i$ (an even number of samples, at least 16) defines the
+fine time grid. Every node is assigned to a group $g\in\{0,1,\dots\}$ with the hop $h_02^{g}$: the
+longest power-of-two multiple of $h_0$ that does not exceed its need $h_i$, but long enough for the
+cycle condition. At most six groups are used, the coarsest with at least 16 frames in the test, and the
+test length is rounded to a whole number of coarse frames.
+
+\emph{Crossovers.} Each group synthesises the nodes of its frequency range. Two adjacent groups are
+joined at a boundary frequency $f_b$ (geometric mean of their edge nodes) with power-complementary
+weights over 1/6 octave: with
+\begin{equation*}
+  t = \min\Bigl(1,\ \max\Bigl(0,\ 6\log_2\frac{f}{f_b} + \frac12\Bigr)\Bigr)
+\end{equation*}
+the lower group receives $1-\sin^2(\pi t/2)$ and the upper one $\sin^2(\pi t/2)$ of the power. Applied
+recursively from the lowest boundary up, this defines weights $X_g(f)\ge0$ with $\sum_gX_g(f) = 1$
+at every frequency.
+
+\subsection{Synthesis of one group}
+
+Let the group have the hop $h$ (in samples) and the frame length $L = 2h$. Frame $\ell$ covers the
+samples $(\ell-1)h,\dots,(\ell+1)h-1$ (circularly) and is multiplied by the \emph{square-root Hann}
+window $w(n) = \sin\bigl(\pi(n+\tfrac12)/L\bigr)$, $n = 0,\dots,L-1$. At any sample two frames overlap,
+at positions $n$ and $n+h$ of their windows, and
+\begin{equation}
+  w(n)^2 + w(n+h)^2 = \sin^2\!\Bigl(\frac{\pi(n+\frac12)}{L}\Bigr) +
+  \sin^2\!\Bigl(\frac{\pi(n+\frac12)}{L}+\frac{\pi}{2}\Bigr)
+  = \sin^2(\cdot)+\cos^2(\cdot) = 1,
+\end{equation}
+because $\pi h/L = \pi/2$. The squared windows of overlapping frames therefore add up to one.
+
+Each frame is a periodic noise built from its discrete Fourier coefficients on the lines $f_q =
+q\,f_s/L$, $q = 0,\dots,h$:
+\begin{equation}
+  C_{\ell q} = \sqrt{\tfrac{Lf_s}{2}}\;\sqrt{X_g(f_q)}\;\sqrt{m_\ell(f_q)}\;c_{\ell q},
+\end{equation}
+where $c_{\ell q}$ are random coefficients with $\E|c_{\ell q}|^2=1$ (Section~\ref{sec:framenoise}) and
+$m_\ell(f_q)$ is the field of the group (the fine field averaged over the $2^g$ fine frames of the
+frame), interpolated linearly in $\log_2 f$ between the nodes. The inverse transform of length $L$
+turns the coefficient $C$ of line $q$ into a cosine of amplitude $2|C|/L$, i.e.\ of power
+$\tfrac12(2|C|/L)^2 = 2|C|^2/L^2$. With the factor $\sqrt{Lf_s/2}$ this power is $(f_s/L)\,X_gm_\ell|c|^2$,
+and dividing by the line spacing $f_s/L$ gives the PSD $X_g(f)\,m_\ell(f)$ (on average over $c$):
+with $m=1$ and $X_g=1$ the frame is white noise of unit one-sided PSD.
+
+The frames of a group are independent and have zero mean, so at a given time the variances of the
+two overlapping (windowed) frames add. Summing over the groups (also independent),
+\begin{result}[Local spectrum of the synthesised noise]
+\begin{equation}\label{eq:meff}
+  m_{\mathrm{eff}}(f,t) = \sum_g X_g(f)\sum_\ell w_{g\ell}(t)^2\,m_{g\ell}(f),
+\end{equation}
+\end{result}
+which is 1 for $m=1$ (since $\sum_\ell w^2 = 1$ and $\sum_g X_g = 1$) and has time average 1 when every
+row of $m$ has mean 1. The model evaluates~\eqref{eq:meff} on the fine grid with two points per fine
+hop ($\delta = h_0\Delta t/2$): between two frame centres the weights are $\cos^2(\pi u/2)$ and
+$\sin^2(\pi u/2)$, $u\in(0,1)$ being the position between them, exactly the squared windows.
+
+\emph{Shaping.} The sum of the groups, $v(t)$, is a noise whose local spectrum is
+$m_{\mathrm{eff}}(f,t)$. Its discrete Fourier transform over the whole test, multiplied by
+$\sqrt{P(f)} = \sqrt{\Pi(f)\,p(f)}$ on every line, gives the test signal: a zero-phase filter that
+turns the unit spectrum into $P(f)$. The local spectrum of the result is $P(f)\,m_{\mathrm{eff}}(f,t)$,
+which is the model~\eqref{eq:evol} with $m = m_{\mathrm{eff}}$.
+
+\subsection{The frame noise}\label{sec:framenoise}
+
+Two kinds of coefficients $c_{\ell q}$ are available.
+\begin{itemize}
+\item \emph{Gaussian frames}: complex normal coefficients (independent real and imaginary parts of
+variance $\tfrac12$). Every frame is then a Gaussian noise, and so is the sum of frames and its
+filtered version at every instant, for any frame length: the signal is conditionally Gaussian, as
+the model assumes (Section~\ref{sec:multisine}).
+\item \emph{Multisine frames}: coefficients of modulus 1 with random phases. Each frame has exactly
+the band power of its spectrum, so the realisation scatters less around the model; but when a frame
+contains only a few lines in the band of an oscillator ($L\,\fn/Q$ small, typically at low frequency
+with short frames), the response within the frame is a sum of a few sinusoids whose amplitudes are
+fixed: its peaks are lighter-tailed than Gaussian, and its damage is on average 20 to 40\,\% lower than the
+Gaussian value at the same variance. The closed loop compensates with a higher level and a deeper
+modulation.
+\end{itemize}
+The program uses Gaussian frames (\code{frame\_noise = "gaussian"}), so that the realisations
+follow the statistics that the model assumes. On measured transport records (not distributed with
+the package) they gave lower maximum FDS errors and lower $\kappa_z$ errors after the closed loop than
+multisine frames; on synthetic records the two were within the scatter between seeds. The scatter
+itself is a property of the target: with $b = 8$ the damage of a strongly modulated response rests on
+its few largest bursts, and the damage of a single oscillator typically varies by a factor of about
+1.5 between two noises of the same field (standard deviation of about 0.5 in $\ln D$ for a field of
+depth $e = 3$ in a 60\,s test). This is the main reason for the closed loop of
+Section~\ref{sec:mmvsdloop}.
+
+\subsection{Design}\label{sec:design}
+
+The design finds the nodal PSD factors $p_j$ and modulation depths $e_j$ for which the model meets the
+targets, before any signal is synthesised. The unknowns are taken in logarithms, $y_j = \ln p_j$ and
+$\chi_j = \ln e_j$, which keeps them positive and makes relative changes uniform. With the field
+fixed, the model gives the residuals
+\begin{equation}
+  r_{D,i}(y) = \ln\frac{D_i(y)}{D_{t,i}}, \qquad r_{\kappa,i}(\chi) = \kappa_i(\chi) - \kappa_{t,i}.
+\end{equation}
+Since the kurtosis depends mainly on the depth and the damage on both, the two are solved
+alternately, three times: first $\chi$ for $r_\kappa = 0$ with $y$ fixed, then $y$ for $r_D=0$ with
+$\chi$ fixed.
+
+Each problem is a regularised least-squares problem solved by the Levenberg--Marquardt method. For the
+level, for example,
+\begin{equation}
+  \min_y\ \|r_D(y)\|^2 + \mu\,\|L(y - y_0)\|^2 ,
+\end{equation}
+where $L$ is the second-difference matrix, $(Ly)_i = y_i - 2y_{i+1} + y_{i+2}$, $\mu$ the weight of
+the curvature penalty ($0.05$ for the level, $0.5$ for the depth) and $y_0$ the preferred solution
+($y_0=0$ with the shape prior: no correction of the reference shape unless the targets require it).
+Linearising $r_D(y+\delta) \approx r_D + J\delta$, with the Jacobian $J_{ij} = \partial r_{D,i}/\partial
+y_j$, and setting the gradient of the objective to zero gives the step
+\begin{equation}
+  \bigl(J^{\top}J + \mu L^{\top}L + \lambda\,\mathrm{diag}(J^{\top}J+\mu L^{\top}L)\bigr)\,\delta
+  = -\bigl(J^{\top}r_D + \mu L^{\top}L(y-y_0)\bigr).
+\end{equation}
+The damping $\lambda$ is divided by 3 after a step that lowers the objective and multiplied by 4 after
+one that does not (then the step is retried). The depths are limited to $10^{-3}\le e_j\le e_{\max}$.
+The level design starts from the median level of the stationary Gaussian solution of
+Section~\ref{sec:inversion}, the depth design from $e_j = \kappa_{t,j}-3$.
+
+\subsection{Exact Jacobians}\label{sec:jacobians}
+
+The model~\eqref{eq:S}--\eqref{eq:Dmodel} is a composition of linear operators and pointwise
+functions, so its derivatives can be computed exactly and cheaply.
+
+\emph{Damage with respect to the level.} On the model grid of $N_t$ points, $D_i =
+\frac{K^b}{C}\frac{T}{N_t}\sum_l d\bigl(S_i(t_l)\bigr)$. Let $g_{k,i}(t) = \partial d/\partial
+S_k$ evaluated at $S_i(t)$. By~\eqref{eq:S}, $\partial S_{k,i}(t)/\partial y_j = W^{(k)}_{ij}
+F_i[Y_j](t)$ with $Y_j(t) = p_jm_j(t)$ (because $\partial p_j/\partial y_j = p_j$). By the chain rule,
+\begin{equation}
+  \frac{\partial D_i}{\partial y_j} = \frac{K^b}{C}\frac{T}{N_t}\sum_k W^{(k)}_{ij}\sum_l g_{k,i}(t_l)\,F_i[Y_j](t_l).
+\end{equation}
+The inner sum is a scalar product between $g_{k,i}$ and a filtered signal. For any linear filter
+$F$, $\sum_l g(t_l)\,F[Y](t_l) = \sum_l F^{\top}[g](t_l)\,Y(t_l)$, where the \emph{adjoint} $F^{\top}$ is
+the same filter run backwards in time (in the Fourier domain: multiplication by the complex conjugate
+of its response). Hence
+\begin{result}[Damage Jacobian]
+\begin{equation}
+  \frac{\partial\ln D_i}{\partial y_j} = \frac{1}{D_i}\frac{K^b}{C}\frac{T}{N_t}
+  \sum_k W^{(k)}_{ij}\sum_l F_i^{\top}[g_{k,i}](t_l)\;p_j\,m_j(t_l).
+\end{equation}
+\end{result}
+The $4n$ adjoint filterings and one matrix product with the field give all $n^2$ entries at the cost
+of a few model evaluations. The derivatives $g_{k,i}$ of the closed-form rate $d$ are computed by
+one-sided differences with a relative step of $10^{-5}$.
+
+\emph{Kurtosis with respect to the depth.} With $A_i = \tavg{s_i^2}$ and $B_i = \tavg{s_i}$,
+$\kappa_i = 3A_i/B_i^2$. A change $\delta m_j(t)$ of the field row $j$ changes $s_i$ by $\delta s_i
+= F_i[W^{(0)}_{ij}p_j\,\delta m_j]$. The mean $B_i$ does not change, because the field keeps
+$\tavg{m_j} = 1$ and therefore $\tavg{\delta m_j} = 0$. The mean square changes by
+$\delta A_i = 2\tavg{s_i\,\delta s_i} = 2W^{(0)}_{ij}p_j\tavg{F_i^{\top}[s_i]\,\delta m_j}$, so
+\begin{equation}
+  \frac{\partial\kappa_i}{\partial\chi_j} = \frac{6\,W^{(0)}_{ij}\,p_j}{B_i^2}\,
+  \Bigl\langle F_i^{\top}[s_i]\;\frac{\partial m_j}{\partial\chi_j}\Bigr\rangle ,
+\end{equation}
+where $\partial m_j/\partial\chi_j$ is obtained by rebuilding the field with $e_j$ multiplied by
+$e^{0.05}$ (the field depends smoothly on $e_j$). The same steps give the derivative of $\ln D_i$ with
+respect to the depth, used by the closed loop.
+
+\emph{Kurtosis with respect to the level.} Here $B_i$ changes too: $\partial B_i/\partial y_j =
+W^{(0)}_{ij}p_j\tavg{m_j}$ and $\partial A_i/\partial y_j = 2W^{(0)}_{ij}p_j\tavg{F_i^\top[s_i]\,m_j}$,
+and $\partial\kappa_i = 3\bigl(\partial A_i/B_i^2 - 2A_i\,\partial B_i/B_i^3\bigr)$.
+
+\subsection{The closed loop on the realisation}\label{sec:mmvsdloop}
+
+The design is synthesised once with frozen frame coefficients; from then on the signal is a smooth
+function of $(p,e)$. Every iteration measures, on the realisation, the rainflow FDS $D_{m}$ and the
+kurtosis of the responses $\kappa_{m}$ (both in one pass over the oscillators) and forms
+\begin{equation}
+  r_{D,i} = \ln\frac{D_{m,i}}{D_{t,i}},\qquad r_{\kappa,i} = w_\kappa\,\bigl(\bar\kappa_{m,i}-\kappa_{t,i}\bigr),
+\end{equation}
+with $w_\kappa = 0.15$ and $\bar\kappa_m$ the measured kurtosis averaged over three adjacent nodes.
+The quality of a realisation is the score $\tfrac12\max_i|r_{D,i}| + \tfrac12q_{90}(|r_D|) +
+\mathrm{mean}_i|r_{\kappa,i}|$, and the best realisation found is kept. Four kinds of steps are used.
+
+\emph{Early re-draws.} The first realisation of the design can miss the target damage of one
+oscillator by a large factor (several hundred per cent) while the median error is a few tens of per
+cent: with $b$ between 5 and 10, one unusually large burst of the noise within the band of that
+oscillator carries most of its damage. A correction of the level would then dig a notch into $P$ at
+that node to compensate one rare event of the noise. Before any correction, therefore, while the worst
+oscillator misses its damage by more than 50\,\%, the response $z$ of that oscillator is computed on
+the realisation, the blocks of its group where $\sum|z|^b$ is largest are found, and the frames that
+build them (the two largest blocks and their neighbours) receive new random coefficients on the lines
+within $\pm1/4$ octave of the oscillator. The new draw is kept only if it lowers both the score and
+the error of that oscillator; otherwise the old coefficients are restored. At most six draws are made,
+and the phase ends after two useless draws in a row, because the remaining error is then a property
+of the design and not of the noise.
+
+\emph{Coupled Gauss--Newton steps} (first phase of the corrections). The model Jacobians carry the couplings between
+oscillators (shared bands, the modulation of a neighbouring band, the envelope law), the measured
+residuals what the model neglects. First the depth moves to correct the kurtosis,
+\begin{equation}
+  \delta\chi = -\bigl(J_{\kappa\chi}^{\top}J_{\kappa\chi} + \mu'L^{\top}L + \lambda\,\mathrm{diag}\bigr)^{-1}
+  \bigl(J_{\kappa\chi}^{\top}r_\kappa + \mu'L^{\top}L\chi\bigr),
+\end{equation}
+then the level moves to correct the damage, including the change that the model predicts for the new
+depth, $r_D + J_{D\chi}\delta\chi$:
+\begin{equation}
+  \delta y = -\bigl(J_{Dy}^{\top}J_{Dy} + \mu''L^{\top}L + \lambda\,\mathrm{diag}\bigr)^{-1}
+  \bigl(J_{Dy}^{\top}(r_D + J_{D\chi}\delta\chi) + \mu''L^{\top}L(y-y_0)\bigr),
+\end{equation}
+with weak curvature weights ($\mu'' = 10^{-4}$, $\mu' = 0.05$) so that node-wise corrections remain
+possible, and steps limited to $\pm0.5$ (depth) and $\pm0.3$ (level) in logarithm. After two steps
+that do not improve the score, the loop switches to polishing.
+
+\emph{Polishing.} Only the level moves, by the damped least-squares step
+\begin{equation}
+  \delta y = -w\,\bigl(J_{Dy}^{\top}J_{Dy} + \mu_p\,\mathrm{diag}(J_{Dy}^{\top}J_{Dy})\bigr)^{-1}J_{Dy}^{\top}r_D ,
+  \qquad \mu_p = 0.5 .
+\end{equation}
+If the Jacobian were diagonal with the entries $b/2$ (each oscillator responding only to its own
+node, $D\propto p^{b/2}$), this would be $\delta y_i = -w\,r_{D,i}/\bigl((b/2)(1+\mu_p)\bigr)$, i.e.\ the
+node-wise step~\eqref{eq:gain} of version~2.0 ($\ln g_i^2 = (2w/b)\ln(D_t/D)$) reduced by $1+\mu_p$.
+With the full Jacobian, the correction of an oscillator whose damage comes from a neighbouring band
+goes to that band instead of driving its own node up or down. The relaxation $w$ adapts as in
+Section~\ref{sec:closedloop}.
+
+\emph{Re-draws.} The largest residual errors are usually a property of the realisation: the damage of
+an oscillator rests on a few large cycles, and the level cannot fix it without disturbing its
+neighbours. When the polishing stalls, the frames that carry most of the model damage of the worst
+oscillator (the two largest and their neighbours, in its group) receive new random coefficients on
+the lines within $\pm1/4$ octave of it, and a short branch of four polishing steps follows. The branch is
+kept only if it beats the best realisation so far; otherwise the old coefficients are restored. At most
+eight re-draws are tried.
+
+\emph{Stopping.} The loop stops when the maximum FDS error is below the tolerance and the median
+kurtosis error below 0.3, when the iteration budget is used, or when the score has not improved by
+1\,\% for ten iterations.
+
+\emph{A second strategy.} The coupled loop corrects kurtosis and damage together and usually
+converges in a few tens of iterations. Where the damage of a few oscillators rests on a few bursts it
+can stall at a compromise between neighbouring oscillators, because the model Jacobian then
+describes the realisation poorly. On request (option \code{fallback}), when its maximum FDS error ends
+above twice the tolerance, the program runs a second closed loop from the same design and the same
+noise with node-wise steps only (the step of Section~\ref{sec:closedloop}, the depth kept at the
+design), which progresses more slowly but steadily, and keeps the realisation with the better score.
+The option is off by default: on measured transport records the coupled loop was better in every
+case, and the second loop only doubled the computing time. The program warns when the final level differs from the design by more than
+a factor of 8 over a band (a systematic drift, typically at oscillators whose damage is produced by
+another band), and when the target kurtosis could not be reached with the maximum depth.

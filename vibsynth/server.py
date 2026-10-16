@@ -98,7 +98,8 @@ class App:
         out = {"id": ref_id, "name": ref.name, "kind": ref.kind, "fn": ref.params.fn, "fds": ref.fds,
                "mrs": ref.mrs, "psd_f": ref.psd_f, "psd": ref.psd, "life_h": ref.life / 3600,
                "stats": ref.stats, "fs": ref.fs, "notes": ref.notes, "repeats": ref.repeats,
-               "params": {"Q": ref.params.Q, "b": ref.params.b}}
+               "params": {"Q": ref.params.Q, "b": ref.params.b},
+               "kz": ref.response_kurtosis}
         if ref_id in self.ws.missions:
             out["breakdown"] = self.ws.mission_breakdown(ref_id)
         self.analysis[ref_id] = out
@@ -121,6 +122,9 @@ class App:
                  ("FDS nodes within 10 %", "", f"{100 * ev['fds_within_10pct']:.0f} %"),
                  ("MRS ratio max", "", f"{np.max(ev['mrs_ratio']):.2f}"),
                  ("PSD deviation in band (rms)", "", f"{ev['psd_rms_db_dev']:.1f} dB")]
+        kz_med = ev.get("kz_median_abs_err")
+        if kz_med is not None:
+            rows.append(("Response kurtosis k_z: median |error|", "", f"{kz_med:.2f}"))
         res = it.meta.get("result", {})
         env = it.meta.get("envelope")
         t = np.arange(it.x.size) / it.fs
@@ -141,8 +145,39 @@ class App:
                 "summary": {"fds_max": ev["fds_max_error_pct"], "fds_median": ev["fds_median_error_pct"],
                             "kurtosis": ev["stats"]["kurtosis"], "rms": ev["stats"]["rms"],
                             "crest": ev["stats"]["crest_factor"], "mrs_max": float(np.max(ev["mrs_ratio"])),
-                            "psd_db": ev["psd_rms_db_dev"]},
-                "tones": res.get("tones")}
+                            "psd_db": ev["psd_rms_db_dev"], "kz_med": kz_med},
+                "tones": res.get("tones"),
+                "kz": {"target": ev.get("kz_target"), "result": ev.get("k_response"),
+                       "model": res.get("k_model")},
+                "mmvsd": self._mmvsd_view(it, res, ref)}
+
+    @staticmethod
+    def _mmvsd_view(it, res, ref):
+        """Modulation field and settings of an MMVSD result (None for other methods)."""
+        if res.get("modulation") is None:
+            return None
+        m = np.asarray(res["modulation"], float)
+        fn = ref.params.fn
+        if m.ndim != 2 or m.shape[0] != fn.size:
+            return None
+        T = it.x.size / it.fs
+        z = np.clip(10 * np.log10(np.maximum(m, 1e-6)), -20, 15)
+        # rows on a uniform axis (log f for a 1/n-octave grid, f for a linear one),
+        # so that the image rows sit at their frequencies
+        d = np.diff(np.log(fn)) if fn.size > 2 else np.ones(1)
+        ylog = bool(fn.size > 2 and np.allclose(d[:-1], d[0], rtol=1e-3))
+        u = np.log(fn) if ylog else fn
+        grid = np.linspace(u[0], u[-1], fn.size)
+        z = np.array([np.interp(grid, u, col) for col in z.T]).T
+        h = 0.5 * (grid[1] - grid[0]) if fn.size > 1 else 0.5
+        y0, y1 = (np.exp(grid[0] - h), np.exp(grid[-1] + h)) if ylog else (grid[0] - h, grid[-1] + h)
+        tc = res.get("time_corr_s")
+        return {"z": z, "x0": 0.0, "x1": T,
+                "y0": y0, "y1": y1, "ylog": ylog, "frames": res.get("frames"),
+                "freq_corr_oct": res.get("freq_corr_oct"),
+                "time_corr_s": None if tc is None else [float(np.min(tc)), float(np.max(tc))],
+                "pattern_mapping": res.get("pattern_mapping"), "tf_corr": res.get("tf_corr"),
+                "lines": res.get("lines"), "excess": res.get("excess")}
 
 
 APP = App()
@@ -398,7 +433,7 @@ class Handler(BaseHTTPRequestHandler):
                         it = ws.get(i)
                         p = ws.params_for([it.fs])
                         APP.log(f"response kurtosis / std: {it.name}")
-                        k, s = DG.response_stats(it.x, it.fs, p.fn, p.Q, p.prefilter)
+                        k, s = DG.response_stats(it.x, it.fs, p.fn, p.Q, p.prefilter, progress=APP.progress)
                         out[i] = {"fn": p.fn, "kurtosis": k, "std": s, "name": it.name}
                     return out
                 return self.send(200, APP.start("response statistics", job))
@@ -549,6 +584,12 @@ class Handler(BaseHTTPRequestHandler):
             opts["pattern"] = d["pattern"]
         if d.get("tones"):
             opts["tones"] = [tuple(map(float, t)) for t in d["tones"]]
+        for k in ("block_s", "max_excess", "freq_corr", "time_corr", "cl_anchor"):   # MMVSD
+            if d.get(k) not in (None, ""):
+                opts[k] = float(d[k])
+        for k in ("modulation", "mapping", "lines"):
+            if d.get(k):
+                opts[k] = str(d[k])
         dur = float(d["duration"])
 
         def job():

@@ -43,7 +43,7 @@ import numpy as np
 from scipy.optimize import brentq
 
 from .design import invert_fds
-from .fds import FDSParams, fds_gaussian, fds_time, response_variance_operator
+from .fds import FDSParams, fds_gaussian, fds_time, response_spectra, response_variance_operator
 from .signals import interp_psd, kurtosis, window_rms
 
 __all__ = ["SynthesisResult", "gaussian", "kfds", "rf", "pf", "psf", "mlv", "vsd", "pm",
@@ -228,7 +228,7 @@ def _restore(objs, snap):
 
 
 def _closed_loop(build, p, fs, D_target, iterations, tol, correct, state_objs,
-                 resolve=None, use=None, log=None, measure="fds"):
+                 resolve=None, use=None, log=None, measure="fds", stats_out=None):
     """Closed-loop FDS correction with exact rainflow measurement.
 
     Each step multiplies the carrier PSD at node j by gain_j^2 with
@@ -246,7 +246,8 @@ def _closed_loop(build, p, fs, D_target, iterations, tol, correct, state_objs,
         if resolve is not None:
             resolve()
         x = build()
-        D, M = fds_time(x, fs, p)
+        rs = response_spectra(x, fs, p)             # same FDS and MRS as fds_time, plus k_z
+        D, M = rs["fds"], rs["mrs"]
         meas = M if measure == "mrs" else D
         ratio = D_target / np.maximum(meas, 1e-300)
         e = np.abs(1.0 / ratio[use] - 1.0)
@@ -259,6 +260,8 @@ def _closed_loop(build, p, fs, D_target, iterations, tol, correct, state_objs,
             log(f"  closed-loop iteration {it}: max |{measure.upper()} error| = {100 * err:.1f} %")
         if best is None or score < best[6]:
             best = (err, x, D, M, _snapshot(state_objs), ratio, score)
+            if stats_out is not None:
+                stats_out["k_response"] = rs["kurtosis"]
             w = min(1.6, w * 1.25) if it > 0 else w
         else:
             _restore(state_objs, best[4])
@@ -297,10 +300,12 @@ def gaussian(D_target, T, fs, p: FDSParams, *, seed=None, correction_iterations=
     car = _Carrier(p.fn, inv.psd, fs, n, rng, q=p.Q)
     st, correct = _node_corrector(car, W, p)
     st["G"] = inv.psd.copy()
+    ks = {}
     x, Dm, M, hist = _closed_loop(car.signal, p, fs, D, correction_iterations, tol, correct,
-                                  [car, st], log=log)
+                                  [car, st], log=log, stats_out=ks)
     return SynthesisResult(x, fs, "Gaussian", r, p.fn, st["G"], None,
                            {"fds_measured": Dm * r, "mrs_measured": M, "fds_error_history": hist,
+                            "k_response": ks.get("k_response"),
                             "inversion_error": inv.max_rel_error})
 
 
@@ -361,8 +366,9 @@ def _modulated(D_target, T, fs, p, mode, target, *, reference=None, ref_fs=None,
     def build():
         return env(state["alpha"]) * state["g"]
 
+    ks = {}
     x, Dm, M, hist = _closed_loop(build, p, fs, D, correction_iterations, tol, correct,
-                                  [car, st, state], resolve=resolve, log=log)
+                                  [car, st, state], resolve=resolve, log=log, stats_out=ks)
     # final check of the envelope constraint on the returned realisation
     off = (abs(kurtosis(x) - target) > 0.1) if mode == "kurtosis" else \
         (abs(np.sqrt(np.mean(x ** 2)) / target - 1) > 0.02 and state["alpha"] > 0)
@@ -370,7 +376,7 @@ def _modulated(D_target, T, fs, p, mode, target, *, reference=None, ref_fs=None,
         # re-impose the envelope constraint, then a few more spectral corrections
         resolve(force=True)
         x, Dm, M, h2 = _closed_loop(build, p, fs, D, 12, tol, correct, [car, st, state],
-                                    resolve=resolve, log=log)
+                                    resolve=resolve, log=log, stats_out=ks)
         hist += h2
     state["g"] = car.signal()
     e = env(state["alpha"])
@@ -379,7 +385,8 @@ def _modulated(D_target, T, fs, p, mode, target, *, reference=None, ref_fs=None,
                            {"fds_measured": Dm * r, "mrs_measured": M, "fds_error_history": hist,
                             "alpha": state["alpha"], "window_s": nw / fs, "n_windows": n_windows,
                             "pattern": pattern, "inversion_error": inv.max_rel_error,
-                            "predicted_kurtosis": float(3 * np.mean(e ** 4) / np.mean(e ** 2) ** 2)},
+                            "predicted_kurtosis": float(3 * np.mean(e ** 4) / np.mean(e ** 2) ** 2),
+                            "k_response": ks.get("k_response")},
                            warn)
 
 
@@ -502,8 +509,9 @@ def pf(D_target, T, fs, p, ref_f, ref_psd, *, burst_fraction=1 / 20, window=None
             carL.reshape(p.fn, gain)
 
     mode = {"keep_psd": True}
+    ks = {}
     x, Dm, M, hist = _closed_loop(build, p, fs, D, correction_iterations, tol, correct,
-                                  [carB, carL, st], log=log)
+                                  [carB, carL, st], log=log, stats_out=ks)
     if hist and min(hist) > 2 * tol and not _keep_psd:
         # where the low-energy part dominates the damage, re-balancing moves the
         # damage the wrong way and the loop stalls; PSF only prescribes the PSD
@@ -512,7 +520,7 @@ def pf(D_target, T, fs, p, ref_f, ref_psd, *, burst_fraction=1 / 20, window=None
         if log:
             log("  switching to joint correction of both parts (PSD shape relaxed locally)")
         x, Dm, M, h2 = _closed_loop(build, p, fs, D, correction_iterations, tol, correct,
-                                    [carB, carL, st], log=log)
+                                    [carB, carL, st], log=log, stats_out=ks)
         hist += h2
         if min(hist) > 2 * tol:
             warn.append(f"{_name}: FDS error {100 * min(hist):.0f} % after the corrections. The test is "
@@ -538,7 +546,8 @@ def pf(D_target, T, fs, p, ref_f, ref_psd, *, burst_fraction=1 / 20, window=None
                            {"fds_measured": Dm * r, "mrs_measured": M, "fds_error_history": hist,
                             "t_burst_s": tB_real, "burst_window_s": nw / fs, "n_bursts": n_bursts,
                             "conflict_frequencies": p.fn[conflict],
-                            "psd_burst_fine": carB.G, "psd_low_fine": carL.G, "grid": grid},
+                            "psd_burst_fine": carB.G, "psd_low_fine": carL.G, "grid": grid,
+                            "k_response": ks.get("k_response")},
                            warn)
 
 
@@ -709,11 +718,12 @@ def mrs_control(M_target, T, fs, p, *, seed=None, correction_iterations=20, tol=
     car = _Carrier(p.fn, G, fs, n, rng, q=p.Q)
     st, correct = _node_corrector(car, W, p)
     st["G"] = G.copy()
+    ks = {}
     x, Dm, M, hist = _closed_loop(car.signal, p, fs, np.asarray(M_target, float), correction_iterations,
-                                  tol, correct, [car, st], log=log, measure="mrs")
+                                  tol, correct, [car, st], log=log, measure="mrs", stats_out=ks)
     return SynthesisResult(x, fs, "MRS", r, p.fn, st["G"], None,
                            {"fds_measured": Dm * r, "mrs_measured": M, "mrs_error_history": hist,
-                            "fds_error_history": hist})
+                            "fds_error_history": hist, "k_response": ks.get("k_response")})
 
 
 # ------------------------------------------------------------------ sine on random
@@ -783,10 +793,12 @@ def sine_on_random(D_target, T, fs, p, tones, life, *, seed=None, drift=0.0, cor
     car = _Carrier(p.fn, inv.psd, fs, n, rng, q=p.Q)
     st, correct = _node_corrector(car, W, p)
     st["G"] = inv.psd.copy()
+    ks = {}
     x, Dm, M, hist = _closed_loop(lambda: xs + car.signal(), p, fs, D, correction_iterations, tol,
-                                  correct, [car, st], use=~over, log=log)
+                                  correct, [car, st], use=~over, log=log, stats_out=ks)
     return SynthesisResult(x, fs, "SoR", r, p.fn, st["G"], None,
                            {"fds_measured": Dm * r, "mrs_measured": M, "fds_error_history": hist,
+                            "k_response": ks.get("k_response"),
                             "tones": [(f0, a0 * amp_scale) for f0, a0 in tones],
                             "tone_amplification": amp_scale, "fds_tones": Ds * r}, warn)
 
@@ -802,4 +814,5 @@ METHODS = {
     "pm": "Kurtosis control, phase manipulation (PSD + kurtosis)",
     "mrs": "MRS control: Gaussian with prescribed Maximum Response Spectrum",
     "sor": "Sine on random: tonal lines + random part, prescribed FDS",
+    "mmvsd": "MMVSD: prescribed FDS + kurtosis spectrum of the responses (time-varying PSD)",
 }

@@ -1,0 +1,162 @@
+\section{Fatigue damage and the Fatigue Damage Spectrum}\label{sec:damage}
+
+\subsection{Basquin's law and Miner's rule}
+
+A material loaded by cycles of constant stress amplitude $S$ fails after $N(S)$ cycles. In the range
+of interest the S--N curve is a straight line in logarithmic scales (Basquin's law):
+\begin{equation}
+  N(S)\,S^b = C ,
+\end{equation}
+with the exponent $b$ (typically 3 to 12; 8 is a common default for structural details) and the
+constant $C$. A cycle of amplitude $S$ consumes the fraction $1/N(S) = S^b/C$ of the life.
+Miner's rule adds these fractions: a history containing $n_c$ cycles of amplitude $S_c$ has the damage
+\begin{equation}\label{eq:miner}
+  D = \sum_c \frac{n_c}{N(S_c)} = \frac1C\sum_c n_c S_c^b ,
+\end{equation}
+and failure is expected when $D$ reaches 1. With $S = Kz$ (Section~\ref{sec:oscillator}), the damage
+of an oscillator is a sum over the cycles of its relative displacement:
+\begin{equation}\label{eq:minerz}
+  D = \frac{K^b}{C}\sum_c n_c\, A_c^b ,\qquad A_c = \text{amplitude (half range) of cycle } c .
+\end{equation}
+Only the ratio of two damages matters in test tailoring, so $K$ and $C$ are set to 1 by default.
+
+\subsection{Rainflow counting}\label{sec:rainflow}
+
+A random response does not consist of clean cycles; \emph{rainflow counting} decomposes it into
+cycles in the way that is consistent with the stress--strain hysteresis of the material. The program
+proceeds in two steps.
+\begin{enumerate}[nosep]
+\item \emph{Turning points.} Only the local maxima and minima of the sampled response matter; the
+samples in between and plateaus are removed, leaving an alternating sequence $s_1, s_2, \dots$.
+\item \emph{Four-point rule.} Take four consecutive turning points $s_{l}, s_{l+1}, s_{l+2},
+s_{l+3}$ and the three ranges between them. If the inner range $|s_{l+2}-s_{l+1}|$ is not larger than
+either outer range, the inner pair forms a closed cycle (a small loop inside a larger one): it is
+counted with amplitude $|s_{l+2}-s_{l+1}|/2$ and the two points are removed. The rule is applied until
+no more cycles close. The remaining sequence (the \emph{residue}) is counted as half cycles, one per
+range, with weight $n_c = \tfrac12$.
+\end{enumerate}
+The program applies the four-point rule to all disjoint candidate pairs of the sequence at once, which
+is fast in NumPy, and finishes long monotone decays with a sequential stack. Its damage sums are equal
+to those of the sequential three-point algorithm of the ASTM E1049 standard (checked to $10^{-10}$ in
+the tests).
+
+\subsection{Fatigue Damage Spectrum and Maximum Response Spectrum}\label{sec:fds}
+
+\begin{result}[FDS and MRS]
+For a base acceleration $x$ of duration $T$, the Fatigue Damage Spectrum is the damage~\eqref{eq:minerz}
+of the rainflow cycles of the response $z_{\fn}$ of each oscillator of the grid,
+\begin{equation}\label{eq:fds}
+  D(\fn) = r\,\frac{K^b}{C}\sum_{c\,\in\,\mathrm{rainflow}(z_{\fn})} n_c A_c^b ,
+\end{equation}
+and the Maximum Response Spectrum is the largest pseudo-acceleration,
+\begin{equation}
+  \mathrm{MRS}(\fn) = \wn^2\max_t|z_{\fn}(t)|.
+\end{equation}
+\end{result}
+The factor $r$ is the number of times the signal is played: a record that represents a life
+$\Tl$ longer than its duration $T$ has $r = \Tl/T$ (rounded to an integer when $\Tl\ge T$, i.e.\ the
+record is considered repeated), and a test profile that is shorter than the test duration is played $r$
+times (Section~\ref{sec:practice}). Damage adds over repetitions; the maximum does not, so the MRS has
+no factor $r$. The MRS is a check of the peak stresses: a test whose MRS exceeds that of the life by
+much may fail the component by overload rather than by fatigue.
+
+\subsection{Rice's formulas for a Gaussian response}\label{sec:rice}
+
+For a stationary Gaussian response the expected damage can be computed from the spectral moments.
+
+\emph{Zero up-crossing rate.} The response crosses zero upwards in the interval $(t,t+\dd t)$ if
+$z(t)\in(-\dot z\,\dd t, 0)$ with $\dot z>0$. The probability of this event is $\int_0^\infty
+p(0,\dot z)\,\dot z\,\dd t\,\dd\dot z$, where $p(z,\dot z)$ is the joint density of $z$ and $\dot z$.
+For a stationary process $z$ and $\dot z$ are uncorrelated, because $\E[z\dot z] =
+\tfrac12\,\dd\E[z^2]/\dd t = 0$, and being jointly Gaussian they are independent:
+$p(0,\dot z) = \frac{1}{\sqrt{2\pi}\sigma_z}\cdot\frac{1}{\sqrt{2\pi}\sigma_{\dot z}}
+e^{-\dot z^2/(2\sigma_{\dot z}^2)}$. Dividing the probability by $\dd t$ and using
+$\int_0^\infty \dot z\,e^{-\dot z^2/(2\sigma_{\dot z}^2)}\dd\dot z = \sigma_{\dot z}^2$,
+\begin{equation}\label{eq:nu0}
+  \nu_0^+ = \frac{\sigma_{\dot z}^2}{2\pi\sigma_z\sigma_{\dot z}} = \frac{\sigma_{\dot z}}{2\pi\sigma_z}
+  = \sqrt{\frac{m_2}{m_0}} ,
+\end{equation}
+using $\sigma_{\dot z} = 2\pi\sqrt{m_2}$ and $\sigma_z = \sqrt{m_0}$ (Section~\ref{sec:respvar}).
+The same reasoning applied to $\dot z$ (a maximum of $z$ is a down-crossing of zero by $\dot z$) gives
+the rate of peaks $\nu_p = \sqrt{m_4/m_2}$. The ratio $\gamma = \nu_0^+/\nu_p = m_2/\sqrt{m_0m_4}$ is
+the \emph{irregularity factor}: $\gamma=1$ means one peak per zero crossing (narrow band).
+
+\emph{Amplitudes of a narrow-band response.}\label{sec:rayleigh} The response of a lightly damped
+oscillator is narrow band: a sinusoid at $\fn$ whose amplitude changes slowly,
+$z = A\cos(\wn t+\psi)$. Then $\dot z/\wn \approx -A\sin(\wn t+\psi)$ and the amplitude is
+$A = \sqrt{z^2+(\dot z/\wn)^2}$. At a given time $z$ and $\dot z/\wn$ are independent zero-mean
+Gaussian variables with the same variance $\sigma^2 = \sigma_z^2$ (equipartition,
+Section~\ref{sec:envelope}). In polar coordinates $(A,\psi)$ their joint density
+$\frac{1}{2\pi\sigma^2}e^{-A^2/(2\sigma^2)}$ times the Jacobian $A$, integrated over $\psi$, gives the
+\emph{Rayleigh} density of the amplitude:
+\begin{equation}
+  p(A) = \frac{A}{\sigma^2}\,e^{-A^2/(2\sigma^2)},\qquad A\ge0 .
+\end{equation}
+Its moment of order $b$ follows with the substitution $u = A^2/(2\sigma^2)$, $A = \sqrt{2\sigma^2u}$,
+$\dd u = A\,\dd A/\sigma^2$:
+\begin{equation}\label{eq:rayleighmoment}
+  \E[A^b] = \int_0^\infty A^b\,\frac{A}{\sigma^2}e^{-A^2/(2\sigma^2)}\,\dd A
+  = \int_0^\infty (2\sigma^2u)^{b/2}e^{-u}\,\dd u = (2\sigma^2)^{b/2}\,\Gamma\!\left(1+\tfrac b2\right).
+\end{equation}
+
+\emph{Expected damage.} A narrow-band response has one cycle per period, $\nu_0^+T \approx \fn T$
+cycles in the duration $T$, each with a Rayleigh amplitude. By~\eqref{eq:minerz} the expected damage is
+the number of cycles times $\E[A^b]$:
+\begin{result}[Gaussian narrow-band damage (Rice--Lalanne)]
+\begin{equation}\label{eq:dgauss}
+  D_G(\fn) = \frac{K^b}{C}\,\fn\,T\,\bigl(2\sigma_z^2\bigr)^{b/2}\,\Gamma\!\left(1+\tfrac b2\right),
+  \qquad \sigma_z^2 = \sum_j W_{ij}G_j .
+\end{equation}
+\end{result}
+Solving for the variance gives the response variance that produces a prescribed damage $D$ in the
+duration $T$:
+\begin{equation}\label{eq:targetvar}
+  \sigma_z^2 = \frac12\left(\frac{D\,C}{K^b\,\fn\,T\,\Gamma(1+b/2)}\right)^{2/b}.
+\end{equation}
+For wide-band responses (for instance the quasi-static response of a high-frequency oscillator to a
+strong low-frequency input) the cycles are not one per period and their amplitudes are not Rayleigh
+distributed. Dirlik's empirical distribution of the rainflow ranges (Appendix~\ref{app:dirlik})
+covers this case; it reduces to~\eqref{eq:dgauss} in the narrow-band limit $\gamma\to1$. MMVSD uses
+it (Section~\ref{sec:damagemodel}).
+
+\subsection{Rainflow on samples: peaks between samples}\label{sec:sampling}
+
+Rainflow counting works on samples. The true maximum of a cycle generally falls between two samples;
+the largest sample of the half cycle is the one nearest to it. For a response of frequency $f$ the
+nearest sample lies within $\pm\Delta t/2$ of the true peak, at a phase offset $\vartheta = 2\pi f
+\delta$ uniformly distributed in $(-\pi f/f_s, \pi f/f_s)$, and the counted peak is $A\cos\vartheta$
+instead of $A$. A range is measured between a maximum and the following minimum, with independent
+offsets $\vartheta_1,\vartheta_2$; its amplitude is $A(\cos\vartheta_1+\cos\vartheta_2)/2$, and its
+damage is reduced on average by the factor
+\begin{result}[Sampling factor]
+\begin{equation}\label{eq:sampling}
+  c_b(\rho) = \E\!\left[\left(\frac{\cos\vartheta_1+\cos\vartheta_2}{2}\right)^{\!b}\right]
+  = \frac{1}{(\pi\rho)^2}\int_0^{\pi\rho}\!\!\int_0^{\pi\rho}
+  \left(\frac{\cos\vartheta_1+\cos\vartheta_2}{2}\right)^{\!b}\dd\vartheta_1\,\dd\vartheta_2 ,
+  \qquad \rho = \frac{f}{f_s},
+\end{equation}
+\end{result}
+(the integrand is even in each angle, so the average over $(-\pi\rho,\pi\rho)$ equals the average
+over $(0,\pi\rho)$). For $b=8$: $c_b = 0.98$ at $\rho = 0.04$, $0.85$ at $\rho = 0.11$ and $0.55$ at
+$\rho=0.23$. The program evaluates~\eqref{eq:sampling} by Gauss--Legendre quadrature on a table of
+$\rho$. Together with the digital response of Section~\ref{sec:digital} this explains why a Gaussian
+design underestimates the measured damage loss at high natural frequencies when $f_s$ is close to
+$2.5f_{\max}$; MMVSD includes both effects in its model.
+
+\subsection{Why the kurtosis of the response matters}\label{sec:kzdamage}
+
+Let the response be Gaussian given a slowly varying local variance $s(t)$ (Section~\ref{sec:modulated}).
+Over a stretch of time where $s$ is constant, the damage rate is the narrow-band
+rate~\eqref{eq:dgauss} with $\sigma_z^2 = s$. Averaging over time,
+\begin{equation}
+  D = \frac{K^b}{C}\fn T\,\Gamma\!\left(1+\tfrac b2\right) 2^{b/2}\,\tavg{s^{b/2}}
+  = D_G\bigl(\tavg{s}\bigr)\;\frac{\tavg{s^{b/2}}}{\tavg{s}^{b/2}} ,
+\end{equation}
+where $D_G(\tavg s)$ is the Gaussian damage of a stationary response with the same variance.
+The factor $\tavg{s^{b/2}}/\tavg{s}^{b/2}$ is at least 1 (Jensen's inequality, since $s^{b/2}$ is
+convex for $b\ge2$). For $b=4$ it equals $\tavg{s^2}/\tavg{s}^2 = \kappa_z/3$ by~\eqref{eq:kmod}; for
+larger $b$ it depends on higher moments of $s$ but grows with $\kappa_z$. Two signals with the same PSD
+can therefore produce very different damage if their responses have different kurtosis, and a test
+that reproduces the FDS with a different $\kappa_z(\fn)$ reproduces it with a different mix of cycles
+(many moderate cycles instead of a few large ones). This is the reason for prescribing $\kappa_z$
+together with the FDS (Part~III).

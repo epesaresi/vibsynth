@@ -177,9 +177,12 @@ function renderPickers() {
     $("#sy_method").innerHTML = Object.entries(S.state.methods).map(([k, v]) => `<option value="${k}">${k.toUpperCase()}: ${esc(v.split(":").slice(-1)[0].trim())}</option>`).join("");
     $("#sy_method").value = "kfds"; $("#sy_method").onchange();
     $("#sy_multi").innerHTML = Object.keys(S.state.methods).map(k => `<label><input type="checkbox" value="${k}">${k.toUpperCase()}</label>`).join("");
+    $$("#sy_multi input").forEach(i => i.onchange = showMM); showMM();
   }
 }
-$("#sy_method").onchange = () => $("#sy_mdesc").textContent = S.state ? S.state.methods[$("#sy_method").value] : "";
+const mmSelected = () => $("#sy_method").value === "mmvsd" || $$("#sy_multi input:checked").some(i => i.value === "mmvsd");
+function showMM() { const on = mmSelected(); $("#sy_mm").hidden = !on; if (on) $("#sy_mm").open = true; }
+$("#sy_method").onchange = () => { $("#sy_mdesc").textContent = S.state ? S.state.methods[$("#sy_method").value] : ""; showMM(); };
 $("#an_go").onclick = async () => {
   const ids = $$("#an_pick input:checked").map(i => i.value); if (!ids.length) return toast("tick at least one signal, specification or mission", true);
   await runJob("/api/analyze", { ids }, res => { if (res) { Object.assign(S.analysed, res); drawAnalysis(ids.map(i => res[i]).filter(Boolean)); } });
@@ -192,6 +195,9 @@ function drawAnalysis(list) {
     .setData(list.map((t, i) => ({ name: t.name, x: t.fn, y: t.mrs, color: P[i % 8], mode: "both" })), { xlog: true, ylog: true });
   chart("ch_psd", { title: "PSD", xlabel: "frequency [Hz]", ylabel: "PSD [(m/s²)²/Hz]", height: 300 })
     .setData(list.map((t, i) => ({ name: t.name, x: t.psd_f, y: t.psd, color: P[i % 8] })), { xlog: false, ylog: true });
+  const kz = list.filter(t => t.kz && t.kz.length);
+  if (kz.length) chart("ch_resp", { title: "Kurtosis of the oscillator responses k_z (3 = Gaussian)", xlabel: "natural frequency [Hz]", ylabel: "kurtosis", height: 300 })
+    .setData(kz.map((t, i) => ({ name: t.name, x: t.fn, y: t.kz, color: P[list.indexOf(t) % 8], mode: "both" })), { xlog: true, ylog: false });
   $("#an_exports").innerHTML = `<label class="inline">Save FDS / MRS / PSD of<select id="an_xid">${list.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join("")}</select></label>
     <select id="an_xf"><option value="csv">csv (zip)</option><option>xlsx</option><option>mat</option><option>json</option></select><button class="sec" id="an_xgo">Download</button>`;
   $("#an_xgo").onclick = () => download(`/api/export?what=target&id=${$("#an_xid").value}&fmt=${$("#an_xf").value}`);
@@ -318,6 +324,9 @@ $("#sy_go").onclick = async () => {
     kurtosis: num($("#sy_k").value), rms: num($("#sy_rms").value), pattern: $("#sy_pat").value, window: num($("#sy_win").value), seed: $("#sy_seed").value,
     iterations: num($("#sy_it").value), tol: num($("#sy_tol").value), fs: num($("#sy_fs").value), prominence_db: num($("#sy_prom").value), drift: num($("#sy_drift").value),
     seeds: seeds.length ? seeds : null, methods: methods.length ? methods : null, name: $("#sy_name").value || null };
+  if (mmSelected()) Object.assign(b, { modulation: $("#sy_mm_mod").value, mapping: $("#sy_mm_map").value, lines: $("#sy_mm_lines").value,
+    block_s: num($("#sy_mm_block").value), freq_corr: num($("#sy_mm_fc").value), time_corr: num($("#sy_mm_tc").value),
+    max_excess: num($("#sy_mm_exc").value), cl_anchor: num($("#sy_mm_anchor").value) });
   if (!b.target) return toast("choose a target", true);
   await runJob("/api/synth", b, async res => { await refresh(); if (res && res.ids && res.ids.length) showResult(res.ids[res.ids.length - 1]); });
 };
@@ -329,18 +338,22 @@ async function renderResults() {
   for (const r of rs) {
     const v = await resSummary(r.id).catch(() => null); if (!v) continue; const s = v.summary;
     rows.push(`<tr data-id="${r.id}" class="${S.res === r.id ? "sel" : ""}"><td class="l"><input type="checkbox" class="rc" value="${r.id}"> ${esc(r.name)}</td><td>${v.method}</td><td>${F(s.fds_max, 3)} %</td><td>${F(s.fds_median, 2)} %</td>
-      <td>${F(s.kurtosis, 3)}</td><td>${F(s.rms)}</td><td>${F(s.crest, 3)}</td><td>${F(s.mrs_max, 3)}</td><td>${F(s.psd_db, 2)} dB</td><td>${v.warnings.length ? "⚠ " + v.warnings.length : ""}</td></tr>`);
+      <td>${F(s.kurtosis, 3)}</td><td>${F(s.rms)}</td><td>${F(s.crest, 3)}</td><td>${F(s.mrs_max, 3)}</td><td>${F(s.psd_db, 2)} dB</td><td>${s.kz_med === null || s.kz_med === undefined ? "–" : F(s.kz_med, 2)}</td><td>${v.warnings.length ? "⚠ " + v.warnings.length : ""}</td></tr>`);
   }
-  $("#restable").innerHTML = `<tr><th class="l">result</th><th>method</th><th>FDS max err</th><th>median</th><th>kurtosis</th><th>RMS</th><th>crest</th><th>MRS max ratio</th><th>PSD dev</th><th></th></tr>` + (rows.join("") || `<tr><td class="l" colspan="10">No results yet.</td></tr>`);
+  $("#restable").innerHTML = `<tr><th class="l">result</th><th>method</th><th>FDS max err</th><th>median</th><th>kurtosis</th><th>RMS</th><th>crest</th><th>MRS max ratio</th><th>PSD dev</th><th title="median |error| of the kurtosis of the oscillator responses">k<sub>z</sub> err</th><th></th></tr>` + (rows.join("") || `<tr><td class="l" colspan="11">No results yet.</td></tr>`);
   $$("#restable tr[data-id]").forEach(tr => tr.onclick = e => { if (e.target.tagName !== "INPUT") showResult(tr.dataset.id); });
 }
 async function showResult(id) {
   S.res = id; delete S.resCache[id]; const v = await resSummary(id); renderResults();
   $("#rs_detail").hidden = false; $("#rs_title").textContent = `${v.name}  →  target: ${v.target_name}`;
-  $("#rs_warn").innerHTML = v.warnings.map(w => `<div class="warn">${esc(w)}</div>`).join("") + (v.tones && v.tones.length ? `<div class="hint">tones: ${v.tones.map(t => F(t[0]) + " Hz / " + F(t[1])).join(", ")}</div>` : "");
+  const mm = v.mmvsd, ln = mm && mm.lines;
+  $("#rs_warn").innerHTML = v.warnings.map(w => `<div class="warn">${esc(w)}</div>`).join("") + (v.tones && v.tones.length ? `<div class="hint">tones: ${v.tones.map(t => F(t[0]) + " Hz / " + F(t[1])).join(", ")}</div>` : "")
+    + (ln && ln.tracks && ln.tracks.length ? `<div class="hint">sine-on-random blocks reproduced as lines (${esc(ln.mapping || "")}): ${ln.tracks.map(t => `${F(t.f_min, 3)}–${F(t.f_max, 3)} Hz ×${F(t.gain, 3)}`).join(", ")}</div>` : "");
   $("#rs_tab").innerHTML = `<tr><td></td><td><b>target</b></td><td><b>result</b></td></tr>` + v.table.map(r => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(r[2])}</td></tr>`).join("");
+  const best = v.history.reduce((a, h) => (a.push(a.length ? Math.min(a[a.length - 1], h) : h), a), []);
   chart("ch_hist", { title: "Closed-loop convergence", xlabel: "iteration", ylabel: "max |error| [%]", height: 200 })
-    .setData([{ name: "max error", x: v.history.map((_, i) => i), y: v.history.map(h => 100 * h), mode: "both" }], { ylog: true });
+    .setData([{ name: "max error", x: v.history.map((_, i) => i), y: v.history.map(h => 100 * h), mode: "both" },
+      { name: "best so far", x: best.map((_, i) => i), y: best.map(h => 100 * h), color: "#c0504d", dash: [4, 3] }], { ylog: true });
   const c = await seriesChart("ch_rs_time", id, "Time history" + (v.envelope ? " and envelope" : ""));
   if (v.envelope) { const s = c.series; s.push({ name: "envelope × RMS", x: v.envelope.t, y: v.envelope.y.map(y => y * v.summary.rms), color: "#c0504d", width: 1.2 }); c.setData(s, { keepView: true }); }
   $("#rs_audio").innerHTML = `<audio controls preload="none" src="/api/item/${id}/audio.wav"></audio>`;
@@ -355,6 +368,22 @@ async function showResult(id) {
   const all = [...v.rms_syn, ...(v.rms_ref || [])], mx = Math.max(...all) * 1.05, ed = Array.from({ length: 41 }, (_, i) => i * mx / 40), mid = ed.slice(0, -1).map((e, i) => e + mx / 80);
   const ser = [{ name: "result", x: mid, y: hist(v.rms_syn, ed), mode: "step", color: "#c0504d" }]; if (v.rms_ref) ser.unshift({ name: "target record", x: mid, y: hist(v.rms_ref, ed), mode: "step" });
   chart("ch_rs_rms", { title: "Distribution of the 1-second RMS (burst structure)", xlabel: "1-s RMS", ylabel: "fraction of windows", height: 300 }).setData(ser);
+  const kz = v.kz || {}, hasKz = kz.result && kz.result.length;
+  $("#rs_kzrow").hidden = !hasKz && !mm;
+  if (hasKz) {
+    const ks = [];
+    if (kz.target && kz.target.length) ks.push({ name: "target", x: v.fn, y: kz.target, width: 2 });
+    ks.push({ name: "result", x: v.fn, y: kz.result, mode: "points" });
+    chart("ch_rs_kz", { title: "Kurtosis of the oscillator responses k_z (3 = Gaussian)", xlabel: "natural frequency [Hz]", ylabel: "kurtosis", height: 300 }).setData(ks, { xlog: true, ylog: false });
+  }
+  $("#ch_rs_mod").hidden = !mm;
+  if (mm) {
+    chart("ch_rs_mod", { title: "MMVSD modulation m(f, t): local power / mean power", xlabel: "time [s]", ylabel: "frequency [Hz]", height: 300, legend: true })
+      .setData([], { image: { x0: mm.x0, x1: mm.x1, y0: mm.y0, y1: mm.y1, z: mm.z, label: "dB" }, ylog: mm.ylog, xlog: false });
+    const tc = mm.time_corr_s;
+    $("#rs_mminfo").innerHTML = `frames ${esc(mm.frames || "")} · burst width ${F(mm.freq_corr_oct, 3)} oct · burst duration ${tc ? F(tc[0], 3) + "–" + F(tc[1], 3) + " s" : "–"}`
+      + (mm.pattern_mapping ? ` · record pattern (${esc(mm.pattern_mapping)}), correlation ${F(mm.tf_corr, 2)}` : " · random field");
+  } else $("#rs_mminfo").textContent = "";
   $("#rsh_out").textContent = "";
 }
 $("#rs_dl").onclick = () => download(`/api/export?what=series&fmt=${$("#rs_fmt").value}&id=${S.res}`);

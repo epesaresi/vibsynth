@@ -1,0 +1,227 @@
+\section{The single-degree-of-freedom oscillator}\label{sec:oscillator}
+
+\subsection{Equation of motion}
+
+A mass $m$ is connected to a moving base by a spring of stiffness $k_s$ and a viscous damper of
+coefficient $c$. The base moves with displacement $y(t)$, so its acceleration is $\ddot y(t) =
+x(t)$, the signal of interest. Let $u(t)$ be the absolute displacement of the mass and
+\begin{equation}
+  z(t) = y(t) - u(t)
+\end{equation}
+the \emph{relative displacement} (base minus mass). The spring and the damper act on the mass with
+the force $k_s(y-u) + c(\dot y-\dot u) = k_s z + c\dot z$, so Newton's law reads $m\ddot u = k_s z +
+c\dot z$. Since $u = y - z$, $\ddot u = x - \ddot z$, and
+\begin{equation}
+  m(x - \ddot z) = k_s z + c \dot z
+  \quad\Longrightarrow\quad
+  \ddot z + \frac{c}{m}\dot z + \frac{k_s}{m} z = x(t).
+\end{equation}
+With the \emph{natural angular frequency} $\wn = \sqrt{k_s/m} = 2\pi\fn$ and the \emph{damping
+ratio} $\zeta = c/(2m\wn)$,
+\begin{result}[Oscillator under base acceleration]
+\begin{equation}\label{eq:sdof}
+  \ddot z + 2\zeta\wn\dot z + \wn^2 z = x(t), \qquad Q = \frac{1}{2\zeta}.
+\end{equation}
+\end{result}
+The quality factor $Q$ is the usual way to give the damping in vibration testing; $Q=10$ ($\zeta =
+5\,\%$) is a common default. The stress in a component modelled by the oscillator is proportional to
+the deformation of its spring, $S = K z$ with a constant $K$. The \emph{pseudo-acceleration}
+$\wn^2 z$ is often plotted instead of $z$: at low frequency it equals the base acceleration.
+
+\subsection{Frequency response}
+
+Let the base acceleration be the complex exponential $x(t) = e^{\ii\omega t}$. The steady-state
+response has the same time dependence, $z(t) = H(\omega)e^{\ii\omega t}$, with $\dot z = \ii\omega z$
+and $\ddot z = -\omega^2 z$. Substituting in~\eqref{eq:sdof}:
+\begin{equation}
+  \bigl(-\omega^2 + 2\ii\zeta\wn\omega + \wn^2\bigr)H(\omega) = 1
+  \quad\Longrightarrow\quad
+  H(\omega) = \frac{1}{\wn^2-\omega^2 + 2\ii\zeta\wn\omega},
+\end{equation}
+and, since $|a+\ii b|^2 = a^2+b^2$,
+\begin{result}[Frequency response]
+\begin{equation}\label{eq:H2}
+  |H(\omega)|^2 = \frac{1}{(\wn^2-\omega^2)^2 + (2\zeta\wn\omega)^2}.
+\end{equation}
+\end{result}
+At $\omega=0$, $|H|=1/\wn^2$ (static deflection). At $\omega = \wn$ the first term of the
+denominator vanishes and $|H(\wn)| = 1/(2\zeta\wn^2) = Q/\wn^2$: the resonance amplifies the static
+response by $Q$.
+
+\emph{Half-power bandwidth.} Near the resonance put $\omega = \wn(1+\varepsilon)$ with
+$|\varepsilon|\ll1$. Then $\wn^2-\omega^2 = -\wn^2(2\varepsilon+\varepsilon^2) \approx -2\varepsilon\wn^2$
+and $2\zeta\wn\omega\approx 2\zeta\wn^2$, so $|H|^2 \approx 1/\bigl(4\wn^4(\varepsilon^2+\zeta^2)\bigr)$.
+This is half of the peak value $1/(4\zeta^2\wn^4)$ when $\varepsilon^2+\zeta^2 = 2\zeta^2$, i.e.\
+$\varepsilon = \pm\zeta$. The band between the two half-power points has the width
+$2\zeta\wn$, or in hertz
+\begin{equation}\label{eq:bandwidth}
+  \Delta f = 2\zeta\fn = \frac{\fn}{Q}.
+\end{equation}
+An oscillator with $Q=10$ responds mainly to a band of $\pm5\,\%$ around $\fn$, i.e.\ about $0.14$
+octave wide. With 12 nodes per octave, adjacent oscillators ($2^{1/12}-1\approx6\,\%$ apart) share most
+of their band. This overlap appears repeatedly in the design problems of Parts~II and~III.
+
+\subsection{Response to a random input}\label{sec:respvar}
+
+Let $x$ be a stationary random signal with PSD $G(f)$, represented by the lines of
+Section~\ref{sec:psd}. Each line $A_m\cos(2\pi f_m t+\varphi_m)$ produces the response line
+$|H(2\pi f_m)|A_m\cos(2\pi f_m t+\varphi_m+\arg H)$, so the response has the line powers
+$|H|^2A_m^2/2$, and by~\eqref{eq:psddef} its PSD is
+\begin{equation}\label{eq:Gz}
+  G_z(f) = |H(2\pi f)|^2\, G(f).
+\end{equation}
+Its variance and, more generally, its \emph{spectral moments} are
+\begin{equation}\label{eq:moments}
+  m_k = \int_0^\infty f^k\, G_z(f)\,\dd f,\qquad k = 0,1,2,4,\qquad \sigma_z^2 = m_0 .
+\end{equation}
+Differentiation multiplies a line by $\ii\omega$, so the velocity $\dot z$ has the PSD
+$(2\pi f)^2G_z$ and the variance $\sigma_{\dot z}^2 = (2\pi)^2 m_2$; likewise $\sigma_{\ddot z}^2 =
+(2\pi)^4 m_4$. These moments describe how often the response crosses zero and how many peaks it has
+(Section~\ref{sec:rice}).
+
+\emph{White noise.} If $G(f)=G_0$ is constant, $\sigma_z^2 = G_0\int_0^\infty |H|^2\dd f$. Appendix~A
+shows that $\int_0^\infty|H|^2\dd f = 1/(8\zeta\wn^3)$, hence
+\begin{equation}\label{eq:miles}
+  \sigma_z^2 = \frac{G_0}{8\zeta\wn^3} = \frac{G_0\,Q}{4\wn^3},
+  \qquad
+  \sigma_{\wn^2 z} = \sqrt{\wn^4\sigma_z^2} = \sqrt{\tfrac{\pi}{2}\,\fn\, Q\, G_0},
+\end{equation}
+the second form being Miles' equation for the RMS pseudo-acceleration (use $\wn = 2\pi\fn$:
+$\wn^4 G_0Q/(4\wn^3) = 2\pi\fn G_0 Q/4 = \tfrac{\pi}{2}\fn QG_0$).
+
+\subsection{The response variance is linear in the PSD: Lalanne's operator}\label{sec:lalanne}
+
+In the program a PSD is described by its values $G_j$ at the nodes $f_{\mathrm{n},j}$ and is linear
+between consecutive nodes. Because~\eqref{eq:moments} is linear in $G$, the response variance of the
+oscillator $i$ is a linear combination of the nodal values,
+\begin{result}[Lalanne's operator]
+\begin{equation}\label{eq:W}
+  \sigma_{z,i}^2 = \sum_{j=1}^n W_{ij}\,G_j ,
+  \qquad W_{ij} = \int_0^\infty |H_i(f)|^2\,\phi_j(f)\,\dd f ,
+\end{equation}
+\end{result}
+where $\phi_j$ is the ``hat'' function equal to 1 at $f_{\mathrm{n},j}$, 0 at the other nodes and
+linear in between, and $H_i$ is the response of the oscillator $f_{\mathrm{n},i}$. Lalanne
+integrated~\eqref{eq:W} in closed form; Appendix~\ref{app:lalanne} gives the complete derivation. The
+matrix $W$ is computed once per damage model. Two details of the program matter:
+\begin{itemize}[nosep]
+\item the PSD of a synthesised profile is not cut at the first and last node but held constant over a
+margin of $3/Q$ relative bandwidth beyond them (an oscillator at the edge of the grid would otherwise
+see only half of its band); the methods of version~2.0 leave the effect of this margin to the closed
+loop, while the operators of MMVSD include it (Section~\ref{sec:operators});
+\item when the pre-filter of Section~\ref{sec:digital} is active, $|H_i|^2$ is multiplied by its power
+response.
+\end{itemize}
+
+\subsection{How fast the response follows a change of the input}\label{sec:envelope}
+
+Part~III needs to know how the response variance follows an input whose level changes with time.
+The mechanical energy of the oscillator per unit mass is $E = \tfrac12\dot z^2 + \tfrac12\wn^2z^2$.
+Its derivative, using~\eqref{eq:sdof} to replace $\ddot z$, is
+\begin{equation}
+  \frac{\dd E}{\dd t} = \dot z\ddot z + \wn^2 z\dot z = \dot z\,(\ddot z + \wn^2 z)
+  = \dot z\,(x - 2\zeta\wn\dot z) = \dot z\,x - 2\zeta\wn\dot z^2 .
+\end{equation}
+Take expectations: $\dd\E[E]/\dd t = \E[\dot z x] - 2\zeta\wn\E[\dot z^2]$. Two facts close this
+equation.
+
+\emph{Equipartition.} In a lightly damped oscillator the response is a sinusoid at $\wn$ with a
+slowly varying amplitude $A$; over a cycle $\dot z^2$ and $\wn^2z^2$ have the same mean $\wn^2A^2/2$,
+so $\E[\dot z^2] = \wn^2\E[z^2] = \E[E]$.
+
+\emph{Input power.} The term $\E[\dot z(t)x(t)]$ is the power that the base injects. The velocity is a
+weighted sum of past inputs, $\dot z(t) = \int_0^\infty h_v(u)x(t-u)\,\dd u$ ($h_v$ is the velocity
+response to a unit impulse of $x$), so $\E[\dot z(t)x(t)] = \int_0^\infty
+h_v(u)\E[x(t-u)x(t)]\,\dd u$. For a broadband input the correlation $\E[x(t-u)x(t)]$ vanishes after a
+time much shorter than one period of the oscillator: the injected power depends only on the current
+intensity of the input near $\fn$, not on the energy already stored. Its value follows from the
+stationary case, where $\dd\E[E]/\dd t = 0$: then $\E[\dot zx] = 2\zeta\wn\E[E] = 2\zeta\wn^3\sigma_z^2$,
+and with~\eqref{eq:miles}, $\E[\dot z x] = 2\zeta\wn^3\,G_0/(8\zeta\wn^3) = G_0/4$.
+
+Let now the input intensity near $\fn$ change slowly, $G_0\to G(t)$, and write $s(t) = \E[z^2] =
+\E[E]/\wn^2$ for the \emph{local variance} of the response. Dividing the energy balance by $\wn^2$:
+\begin{equation}
+  \frac{\dd s}{\dd t} = \frac{G(t)}{4\wn^2} - 2\zeta\wn\, s
+  = \frac{1}{\tau}\bigl(s_\infty(t) - s(t)\bigr),
+  \qquad s_\infty(t) = \frac{G(t)}{8\zeta\wn^3},
+\end{equation}
+where $s_\infty(t)$ is the stationary variance for the current input~\eqref{eq:miles} and
+\begin{result}[Envelope law of the response]
+\begin{equation}\label{eq:tau}
+  \tau = \frac{1}{2\zeta\wn} = \frac{Q}{2\pi\fn},\qquad
+  s(t) = \int_0^\infty \frac{1}{\tau}e^{-u/\tau}\, s_\infty(t-u)\,\dd u .
+\end{equation}
+\end{result}
+The second form is the solution of the first-order equation (differentiate it to check). The
+response variance is the stationary variance low-pass filtered with the time constant $\tau$. For a
+non-white input the same law is applied with $s_\infty(t) = \int|H|^2G(f,t)\dd f$ computed from the
+local spectrum $G(f,t)$.
+
+\subsection{Consequence: fast modulations do not reach the response}\label{sec:papoulis}
+
+Suppose the stationary variance $s_\infty(t)$ fluctuates about its mean with variance $V$ and an
+exponential correlation $\E[\delta s_\infty(t)\delta s_\infty(t+u)] = Ve^{-|u|/T_c}$, $T_c$ being the
+correlation time (the duration of a burst). In the frequency domain the fluctuation has the two-sided
+spectrum $2VT_c/(1+\omega^2T_c^2)$ (its integral over $\omega/2\pi$ is $V$), and the filter
+of~\eqref{eq:tau} has $|H_\tau(\omega)|^2 = 1/(1+\omega^2\tau^2)$. The variance of the filtered
+fluctuation is
+\begin{equation}
+  \Var[s] = \int_{-\infty}^{\infty}\frac{\dd\omega}{2\pi}\,
+  \frac{2VT_c}{(1+\omega^2T_c^2)(1+\omega^2\tau^2)} = \frac{2VT_c}{2\pi}\cdot\frac{\pi}{T_c+\tau}
+  = V\,\frac{T_c}{T_c+\tau},
+\end{equation}
+where the integral $\int_{-\infty}^{\infty}\dd\omega/\bigl((1+\omega^2a^2)(1+\omega^2b^2)\bigr) =
+\pi/(a+b)$ follows from the partial fractions $\frac{1}{(1+\omega^2a^2)(1+\omega^2b^2)} =
+\frac{1}{a^2-b^2}\bigl(\frac{a^2}{1+\omega^2a^2}-\frac{b^2}{1+\omega^2b^2}\bigr)$ and
+$\int\dd\omega/(1+\omega^2a^2) = \pi/a$: $\frac{1}{a^2-b^2}(\pi a - \pi b) = \pi/(a+b)$.
+The mean of $s$ is not changed by the filter (its gain at $\omega=0$ is 1). Inserting in the last
+form of~\eqref{eq:kmod}, $\kappa = 3\tavg{s^2}/\tavg{s}^2 = 3(1+\Var[s]/\tavg{s}^2)$, the kurtosis of
+the response is
+\begin{result}[Low-pass effect of the oscillator on the kurtosis]
+\begin{equation}\label{eq:papoulis}
+  \kappa_z - 3 = \bigl(\kappa_\infty - 3\bigr)\,\frac{T_c}{T_c+\tau},
+\end{equation}
+\end{result}
+where $\kappa_\infty-3 = 3V/\tavg{s}^2$ is the excess kurtosis that the response would have if it
+followed the input instantaneously. Bursts much shorter than $\tau$ leave a nearly Gaussian response
+(this is Papoulis' rule); bursts much longer than $\tau$ are fully transmitted. Since $\tau$ is
+inversely proportional to $\fn$, the same input can produce Gaussian responses at low natural
+frequencies and leptokurtic ones at high natural frequencies. The kurtosis of the response,
+$\kappa_z(\fn)$, is therefore a function of the natural frequency, and it is this function, not the
+kurtosis of $x$, that governs the damage (Section~\ref{sec:damage}).
+
+\subsection{The oscillator as the program computes it}\label{sec:digital}
+
+The program computes $z$ from the samples $x_k$ with a second-order recursion,
+\begin{equation}\label{eq:recursion}
+  z_k = b_1x_k + b_2x_{k-1} + b_3x_{k-2} - a_1 z_{k-1} - a_2 z_{k-2},
+\end{equation}
+whose coefficients are those of the \emph{ramp-invariant} discretisation: they give the exact
+response of~\eqref{eq:sdof} at the sampling instants when $x$ varies linearly between samples.
+Appendix~\ref{app:smallwood} derives them. The frequency response of the recursion is obtained by
+inserting $x_k = e^{\ii\omega k\Delta t}$, $z_k = H_d e^{\ii\omega k\Delta t}$:
+\begin{equation}\label{eq:Hd}
+  H_d(f) = \frac{b_1 + b_2 e^{-\ii\theta} + b_3 e^{-2\ii\theta}}{1 + a_1e^{-\ii\theta}+a_2e^{-2\ii\theta}},
+  \qquad \theta = 2\pi f\Delta t .
+\end{equation}
+It equals $H$ when $\fn\ll f_s$ but not when $\fn$ approaches $f_s/2$. The ratio of the response
+variances to a flat input, $\int|H_d|^2/\int|H|^2$, is for $Q=10$:
+\begin{center}
+\begin{tabular}{lccccc}
+\toprule
+$f_s/\fn$ & 25 & 8.8 & 6.25 & 4.4 & 3.3 \\
+variance ratio & 0.99 & 0.92 & 0.85 & 0.72 & 0.56 \\
+\bottomrule
+\end{tabular}
+\end{center}
+The FDS of a record and of a test are both computed with~\eqref{eq:recursion}, so the comparison is
+consistent; but a design based on the analogue~\eqref{eq:H2} overestimates the response at high
+natural frequencies when $f_s$ is only a few times $f_{\max}$. The methods of version~2.0 design with
+$H$ and let the closed loop (Section~\ref{sec:closedloop}) correct the difference; MMVSD designs with
+$H_d$ directly (Section~\ref{sec:operators}).
+
+\emph{Pre-filter.} When $f_s\le 10f_{\max}$ the program first passes $x$ through a fixed third-order
+digital filter, forward and then backward in time (zero phase), as in the FDS computation of the
+dissertation. Applied twice, the filter multiplies the PSD by $|H_{\mathrm{pre}}(f)|^4$. The same
+filter is applied to records and tests, and $|H_{\mathrm{pre}}|^4$ multiplies $|H|^2$ in every
+operator of the program, so that the designs stay consistent with the measurement.

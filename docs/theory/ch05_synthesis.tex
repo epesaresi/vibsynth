@@ -1,0 +1,80 @@
+\part*{Part II --- Mission synthesis}
+\addcontentsline{toc}{part}{Part II --- Mission synthesis}
+
+\section{Synthesis of a profile with a prescribed FDS}\label{sec:synthesis}
+
+\subsection{The tailoring problem}
+
+A target is described by its FDS $D_t(\fn)$ over the life $\Tl$ (Section~\ref{sec:fds}), its MRS,
+its PSD and its statistics. A specification (a PSD or a swept sine) or a mission
+(Section~\ref{sec:missions}) is converted into the same description. The test must last $T\le\Tl$ and
+reproduce $D_t$ on every node. If the life is compressed by the factor $\Tl/T$, the damage per unit
+time must increase by the same factor; with the narrow-band law~\eqref{eq:dgauss}, where $D\propto
+T\sigma_z^b$, this means multiplying the response amplitudes, hence the test amplitudes, by
+$(\Tl/T)^{1/b}$. For $b=8$ a ten times shorter test is only $10^{1/8} = 1.33$ times more severe in
+amplitude; this mild growth is what makes accelerated testing possible.
+
+\subsection{Gaussian design: from the FDS to a PSD}\label{sec:inversion}
+
+The standard mission synthesis looks for a stationary Gaussian profile. Equation~\eqref{eq:targetvar}
+with the test duration $T$ gives, at every node, the response variance $\sigma^2_{t,i}$ that produces
+the target damage. Equation~\eqref{eq:W} relates the response variances to the PSD values, so the
+design is the linear problem
+\begin{equation}\label{eq:WG}
+  \sum_j W_{ij}G_j = \sigma^2_{t,i}, \qquad G_j\ge0 .
+\end{equation}
+All entries of $W$ are positive and each row is dominated by the columns near its own node (the
+oscillator responds mainly to its band). The program solves~\eqref{eq:WG} by the multiplicative
+fixed point
+\begin{equation}\label{eq:multfix}
+  G_j \leftarrow G_j\,\frac{\sigma^2_{t,j}}{(WG)_j},
+\end{equation}
+started from $G_j = \sigma^2_{t,j}/W_{jj}$. If the response of node $j$ is too small,
+$(WG)_j<\sigma^2_{t,j}$ and $G_j$ grows; if too large, it shrinks; positivity is preserved because
+only positive factors are applied. The iteration stops when $\max_j|\sigma^2_{t,j}/(WG)_j - 1| <
+10^{-4}$; when it stalls, a non-negative least-squares solution of the scaled system is used instead.
+Because neighbouring oscillators overlap, the exact solution may set some nodes to zero and raise
+their neighbours; the synthesis keeps a tiny floor on such lines so that later multiplicative
+corrections can revive them.
+
+\subsection{Synthesis of the time history}
+
+The PSD on the FFT grid of the test (line spacing $1/T$) is the linear interpolation of the nodal
+values, held constant over $3/Q$ relative bandwidth beyond the first and last node. The time history
+is the random-phase multisine of Section~\ref{sec:multisine} with these line powers. The phases are
+drawn once with the random seed and then frozen.
+
+\subsection{The closed loop}\label{sec:closedloop}
+
+The design uses the Gaussian formula~\eqref{eq:dgauss}, while the test will be judged by the rainflow
+FDS~\eqref{eq:fds} of the realised signal; the two differ (wide-band responses, the digital oscillator,
+the sampling of the peaks, and the scatter of a single realisation). Every FDS method of the package
+therefore ends with a \emph{closed loop}: the rainflow FDS $D_i$ of the realisation is measured and the
+spectrum is corrected until it matches the target.
+
+\emph{Correction step.} If the amplitude of the signal in the band of node $i$ is multiplied by $g_i$,
+the response amplitudes of oscillator $i$ are multiplied by $g_i$ and, by~\eqref{eq:minerz}, its damage
+by $g_i^b$. The gain that would correct an isolated node is therefore $(D_{t,i}/D_i)^{1/b}$. The
+program uses
+\begin{equation}\label{eq:gain}
+  g_i = \mathrm{clip}\!\left(\left(\frac{D_{t,i}}{D_i}\right)^{w/b},\ \tfrac{1}{1.5},\ 1.5\right),
+  \qquad G(f)\leftarrow G(f)\,g(f)^2,
+\end{equation}
+where $g(f)$ is the linear interpolation of the nodal gains, the phases stay frozen and, for the
+modulated methods, the envelope is kept. The relaxation $w$ starts at 1 and grows by 25\,\% after each
+improving step up to 1.6 (over-relaxation: because neighbouring oscillators share their bands, a
+plain step corrects only part of the error). A step that makes the result worse is undone and $w$ is
+halved.
+
+\emph{Acceptance score.} A step is judged by $\tfrac12\max_i e_i + \tfrac12 q_{90}(e)$, where
+$e_i = |D_i/D_{t,i}-1|$ and $q_{90}$ is the 90th percentile over the nodes: one stubborn oscillator
+must not block the improvement of all the others. The loop stops when the maximum error is below the
+tolerance (5\,\% by default), when the number of corrections is exhausted, or when $w<1/16$; the best
+realisation found is returned.
+
+\subsection{Long tests}\label{sec:repeats}
+
+A test longer than a maximum number of samples (20 million by default; 4 million for MMVSD) is
+synthesised as a shorter profile of duration $T/r$ that is played $r$ times; the target of the
+profile is $D_t/r$. Damage adds over repetitions (Section~\ref{sec:fds}), so the whole test meets
+$D_t$.

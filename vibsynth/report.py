@@ -6,8 +6,8 @@ import io
 import numpy as np
 
 from .analysis import Reference
-from .fds import sdof_relative_displacement, apply_prefilter
-from .signals import kurtosis, window_rms
+from .fds import FDSParams, response_spectra
+from .signals import window_rms
 
 __all__ = ["summary_table", "make_figure", "response_kurtosis"]
 
@@ -17,8 +17,7 @@ def response_kurtosis(x, fs, fn, Q, prefilter="auto"):
 
     Shows how much of the input non-Gaussianity reaches the component
     (Papoulis' rule, dissertation section 1.1)."""
-    y = apply_prefilter(x, fs, fn, prefilter)
-    return np.array([kurtosis(sdof_relative_displacement(y, fs, f, Q)) for f in fn])
+    return response_spectra(x, fs, FDSParams(np.asarray(fn, float), Q=Q, prefilter=prefilter))["kurtosis"]
 
 
 def summary_table(ref: Reference, res, ev: dict) -> list[tuple[str, str, str]]:
@@ -35,6 +34,8 @@ def summary_table(ref: Reference, res, ev: dict) -> list[tuple[str, str, str]]:
         ("MRS ratio max", "", f"{np.max(ev['mrs_ratio']):.2f}"),
         ("PSD deviation in band (rms)", "", f"{ev['psd_rms_db_dev']:.1f} dB"),
     ]
+    if ev.get("kz_median_abs_err") is not None:
+        rows.append(("Response kurtosis k_z: median |error|", "", f"{ev['kz_median_abs_err']:.2f}"))
     return rows
 
 
@@ -44,7 +45,12 @@ def make_figure(ref: Reference, res, ev: dict, fmt="png", dpi=110):
     import matplotlib.pyplot as plt
 
     fn = ref.params.fn
-    fig, ax = plt.subplots(2, 2, figsize=(12, 7.5))
+    kz_t, kz_r = ev.get("kz_target"), ev.get("k_response")
+    with_kz = kz_r is not None and kz_t is not None and np.size(kz_t) == fn.size
+    if with_kz:                                   # third row: response kurtosis and MRS ratio
+        fig, ax = plt.subplots(3, 2, figsize=(12, 11))
+    else:
+        fig, ax = plt.subplots(2, 2, figsize=(12, 7.5))
     c_ref, c_syn = "#1f4e79", "#c0504d"
     # time histories
     a = ax[0, 0]
@@ -92,6 +98,19 @@ def make_figure(ref: Reference, res, ev: dict, fmt="png", dpi=110):
     a.set_xlabel("1-s RMS")
     a.set_title("Distribution of the 1-second RMS (burst structure)")
     a.legend(fontsize=8)
+    if with_kz:
+        a = ax[2, 0]
+        a.semilogx(fn, kz_t, color=c_ref, lw=1.5, label="target")
+        a.semilogx(fn, kz_r, "o", ms=3, color=c_syn, label=res.method)
+        a.axhline(3.0, color="0.7", lw=0.6, ls="--")
+        a.set_xlabel("natural frequency [Hz]")
+        a.set_title("Kurtosis of the oscillator responses k_z (3 = Gaussian)")
+        a.legend(fontsize=8)
+        a = ax[2, 1]
+        a.semilogx(fn, ev["mrs_ratio"], "o-", ms=3, lw=0.8, color=c_syn)
+        a.axhline(1.0, color="0.7", lw=0.6, ls="--")
+        a.set_xlabel("natural frequency [Hz]")
+        a.set_title("MRS ratio result / target (above 1: higher peak stresses)")
     fig.tight_layout()
     buf = io.BytesIO()
     fig.savefig(buf, format=fmt, dpi=dpi)

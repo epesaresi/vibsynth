@@ -2,6 +2,7 @@
 
     python -m vibsynth analyze  record.mat --fmin 5 --fmax 200 --Q 20 --b 7
     python -m vibsynth synth    record.mat --method kfds --duration 30 --out test.mat --report test.png
+    python -m vibsynth synth    record.mat --method mmvsd --duration 60 --modulation pattern --out test.mat
     python -m vibsynth gui
 """
 from __future__ import annotations
@@ -13,7 +14,7 @@ import sys
 import numpy as np
 
 from . import __version__
-from .analysis import analyze_reference, evaluate
+from .analysis import analyze_reference, evaluate, response_statistics
 from .io import load_signal, save_result
 from .pipeline import run_method
 from .report import make_figure, summary_table
@@ -49,7 +50,7 @@ def _reference(a):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="vibsynth", description=f"vibsynth {__version__}: "
-                                 "vibration mission synthesis (kFDS, RF, PF, PSF, kurtosis control)")
+                                 "vibration mission synthesis (kFDS, RF, PF, PSF, MMVSD, kurtosis control)")
     sub = ap.add_subparsers(dest="cmd", required=True)
     pa = sub.add_parser("analyze", help="statistics, FDS, MRS and PSD of a record")
     _common(pa)
@@ -65,6 +66,18 @@ def main(argv=None):
     ps.add_argument("--seed", type=int)
     ps.add_argument("--iterations", type=int, default=30)
     ps.add_argument("--tol", type=float, default=0.05)
+    mm = ps.add_argument_group("MMVSD", "options of --method mmvsd")
+    mm.add_argument("--modulation", default="random", choices=["random", "pattern"],
+                    help="random field with the statistics of the record, or its own time-frequency pattern")
+    mm.add_argument("--mapping", default="blocks", choices=["blocks", "compress"],
+                    help="pattern of a longer record on a shorter test")
+    mm.add_argument("--block", type=float, help="block length of the blocks mapping [s]")
+    mm.add_argument("--lines", default="lines", choices=["lines", "random", "off"],
+                    help="sine-on-random blocks as deterministic lines, in the random part, or not detected")
+    mm.add_argument("--max-excess", type=float, default=30.0, help="cap of the modulation excess 3 Var(m)")
+    mm.add_argument("--freq-corr", type=float, help="burst width along log2 f [octaves] (default: from the record)")
+    mm.add_argument("--time-corr", type=float, help="burst duration [s] (default: from the record)")
+    mm.add_argument("--anchor", type=float, default=0.0, help="pull of the PSD towards the design (e.g. 0.01)")
     ps.add_argument("--out", required=True, help=".mat, .csv or .npy")
     ps.add_argument("--report", help="figure (.png/.pdf/.svg)")
     ps.add_argument("--json", help="metrics as JSON")
@@ -87,11 +100,17 @@ def main(argv=None):
                        header="fn_Hz,FDS,MRS", comments="")
             print("written", a.out)
         return 0
+    mmkw = {}
+    if a.method == "mmvsd":
+        mmkw = dict(modulation=a.modulation, mapping=a.mapping, block_s=a.block, lines=a.lines,
+                    max_excess=a.max_excess, freq_corr=a.freq_corr, time_corr=a.time_corr, cl_anchor=a.anchor)
     res = run_method(ref, a.method, a.duration, kurtosis=a.kurtosis, rms=a.rms, pattern=a.pattern,
-                     seed=a.seed, iterations=a.iterations, tol=a.tol, window=a.window, log=print)
+                     seed=a.seed, iterations=a.iterations, tol=a.tol, window=a.window, log=print, **mmkw)
+    if res.info.get("k_response") is not None and ref.response_kurtosis is None:
+        response_statistics(ref)                   # target k_z (one pass of the oscillator bank)
     ev = evaluate(res.x, res.fs, ref, repeats=res.repeats, fds=res.info.get("fds_measured"),
                   mrs=res.info.get("mrs_measured"),
-                  target_scale=res.info.get("fds_target_scale", 1.0))
+                  target_scale=res.info.get("fds_target_scale", 1.0), k_response=res.info.get("k_response"))
     for name, rv, sv in summary_table(ref, res, ev):
         print(f"  {name:30s} {rv:>18s} {sv:>22s}")
     for w in res.warnings:

@@ -1,0 +1,132 @@
+\section{Sine-on-random blocks}\label{sec:lines}
+
+\subsection{The problem}
+
+Rotating machines (engines, pumps, fans) add tonal lines to the random vibration, at the rotation
+frequency and its orders. In a record these lines are often present only in some parts (idle, cruise)
+and their frequency drifts with the speed. A line is not a narrow random resonance: its phase is
+coherent over many periods, its amplitude is nearly constant, and a sinusoidal response is far less
+damaging than a Gaussian response of the same variance (a sine has no rare large cycles: its damage
+ratio to a narrow-band Gaussian response of equal variance is $1/\Gamma(1+b/2)$, which is $1/24$ for
+$b=8$, from~\eqref{eq:rayleighmoment} with $A = \sqrt2\sigma$ fixed). Treating the lines as part of a
+random process therefore misrepresents the damage. MMVSD detects the blocks of the record where lines
+stand on the random background (\emph{sine-on-random blocks}), reproduces the lines as deterministic
+sines, and designs the random part for the rest.
+
+\subsection{Detection block by block}
+
+The record is cut into blocks of 5\,s. In every block the PSD is estimated with a resolution of
+0.5\,Hz (Hann windows, 75\,\% overlap) and the line detector of Section~\ref{sec:sor2} proposes
+candidate peaks. A candidate is accepted only if it passes a \emph{phase coherence} test.
+
+\emph{Coherence.} The frequency of the candidate is followed frame by frame inside the block (the
+maximum of each short-time spectrum near the candidate, refined by fitting a parabola to the logarithm
+of the three largest values), and a straight line $f(t)$ is fitted to these values. The block is then
+demodulated along this frequency, $y(t) = x(t)\,e^{-2\pi\ii\int f\,\dd t}$, and low-pass filtered to
+$\pm1$\,Hz, which leaves the \emph{complex envelope} $c(t)$ of whatever lies near the candidate. For a
+sine $A\cos(\varphi(t)+\psi)$ with $\varphi = 2\pi\int f\dd t$,
+\begin{equation}
+  x\,e^{-\ii\varphi} = \tfrac{A}{2}e^{\ii\psi} + \tfrac{A}{2}e^{-\ii\psi}e^{-2\ii\varphi},
+\end{equation}
+and the low-pass filter removes the second term (at twice the line frequency): $c = \tfrac
+A2e^{\ii\psi}$ is constant. For narrow-band noise $c(t)$ is a random phasor. With $N$ samples of $c$,
+the coherence is
+\begin{equation}
+  \Phi = \max_{|\delta|\le r/4}\frac{\bigl|\sum_l c_l\,e^{-2\pi\ii\delta t_l}\bigr|^2}{N\sum_l|c_l|^2}\in[0,1],
+\end{equation}
+where the small residual frequency offset $\delta$ (up to a quarter of the resolution $r$) absorbs
+the error of the frequency fit. By the Cauchy--Schwarz inequality $|\sum_lc_l|^2\le N\sum_l|c_l|^2$, with
+equality when $c$ is constant: a sine gives $\Phi\approx1$ (slightly less because of the background in
+the filter band). Noise of bandwidth $B$ observed for the block duration $T_b$ has a complex envelope
+that stays correlated for about $1/B$; the $N$ samples form about $N_{\mathrm{ind}} = BT_b$
+independent groups of $N/N_{\mathrm{ind}}$ nearly equal values. Each group sums to about
+$(N/N_{\mathrm{ind}})c_g$, the groups add with random phases, so $\E|\sum_lc_l|^2\approx
+N_{\mathrm{ind}}(N/N_{\mathrm{ind}})^2\E|c|^2 = N^2\E|c|^2/N_{\mathrm{ind}}$, while $N\sum|c|^2\approx
+N^2\E|c|^2$: noise gives $\Phi\approx1/(BT_b)$. A random resonance with $Q = 60$ at 70\,Hz ($B\approx
+1.2$\,Hz) over 5\,s gives $\Phi\approx0.17$; a line gives 0.9 or more.
+
+\emph{Tracks.} A candidate with $\Phi\ge0.75$ is a line; candidates of consecutive blocks within 5\,\%
+in frequency are linked into \emph{tracks}. A track is kept if at least two of its blocks are strongly
+coherent ($\Phi\ge0.75$); between them it may pass through weakly coherent blocks ($\Phi\ge0.5$), so
+that a line with a wandering speed or a low signal-to-noise ratio is not cut (hysteresis). A random
+resonance that passes the test by chance in one block is dropped.
+
+\subsection{Extraction}
+
+Each track is followed frame by frame in its active intervals (consecutive detected blocks, gaps of up
+to two blocks bridged), its frequency is median-filtered over three frames against spurious peaks,
+and the record is demodulated along the track's own phase and low-pass filtered (to half the
+resolution). By the computation above, the low-pass result is the complex envelope $c(t)$ of the line,
+and the line itself is
+\begin{equation}
+  \ell(t) = 2\,\mathrm{Re}\bigl(c(t)\,e^{\ii\varphi(t)}\bigr),
+\end{equation}
+tapered at the edges of the intervals. The sum of the lines is subtracted from the record; the
+\emph{residual} is the random part of the record. The track keeps its frequency $f(t)$ and amplitude
+$a(t) = 2|c(t)|$ on a time grid of the record.
+
+\subsection{The lines of the test}\label{sec:testlines}
+
+The reference time is mapped onto the test time with the mapping of the time--frequency pattern
+(Section~\ref{sec:pattern}); with the random field, \code{compress} is used, so that every tonal block
+of the record appears in the test, in its order. The amplitude and frequency of each track are read
+along the mapped time, smoothed over 0.1\,s, and the track is played as a sine with a random initial
+phase.
+
+\emph{Gain of a track.} The damage that a line with a slowly varying amplitude $a(t)$ produces in an
+oscillator is the sum of the damages of its cycles, $\frac{K^b}{C}\int f\,(|H|a)^b\,\dd t$. If the
+test plays the same frequency path, the factors $f|H|^b$ are the same in the record and in the test,
+and the life damage is kept when the test amplitude $g_ja_j$ satisfies
+$\int_{\mathrm{test}}(g_ja_j)^b\dd t = \frac{\Tl}{T_{\mathrm{ref}}}\int_{\mathrm{ref}}a_j^b\dd t$:
+\begin{result}[Gain of a track]
+\begin{equation}
+  g_j = \left(\frac{\Tl}{T_{\mathrm{ref}}}\,\frac{\int_{\mathrm{ref}}a_j(t)^b\,\dd t}{\int_{\mathrm{test}}a_j(t)^b\,\dd t}\right)^{1/b}.
+\end{equation}
+\end{result}
+For a stationary line, $\int_{\mathrm{ref}}a^b = A^bT_{\mathrm{ref}}$ and $\int_{\mathrm{test}}a^b = A^bT$,
+and $g = (\Tl/T)^{1/b}$, the sine-on-random rule~\eqref{eq:sorgain}. A track whose blocks fall outside
+the mapped part of the record is reported; its damage is then carried by the random part.
+
+\subsection{The random part}
+
+Line damage and random damage do not add: a line rides on the random peaks and changes their ranges.
+Rather than assuming additivity, MMVSD designs the random part for the \emph{measured} FDS and response
+kurtosis of the residual, scaled to the life, $D_{\mathrm{res}}\Tl/T_{\mathrm{ref}}$ and
+$\max(\kappa_{\mathrm{res}},3)$, with the PSD of the residual as shape prior and, in pattern mode, the
+band-power pattern of the residual. The closed loop then measures the complete test (random part plus
+lines) against the complete target, with the lines kept fixed.
+
+\emph{Kurtosis of a response with lines.} Given the field, the response of an oscillator is a
+Gaussian part $g$ (variance $s$) plus the responses of the lines, $\sum_j u_j^{1/2}\sqrt2\cos\theta_j$,
+where $u_j$ is the response variance of line $j$ and the phases $\theta_j$ are independent and uniformly
+distributed. For one line of amplitude $\alpha = \sqrt{2u}$: $\E[\alpha^4\cos^4\theta] =
+\alpha^4\cdot\tfrac38 = \tfrac38(2u)^2 = \tfrac32u^2$, using $\cos^4\theta = \tfrac38 +
+\tfrac12\cos2\theta + \tfrac18\cos4\theta$. For the sum $X = \sum_jX_j$ of independent zero-mean lines,
+the fourth moment keeps the terms $X_j^4$ and the pairs $X_j^2X_l^2$ ($\binom42 = 6$ orderings,
+counted once for each unordered pair, i.e.\ $3$ per ordered pair $j\neq l$):
+\begin{equation}
+  \E[X^4] = \sum_j\tfrac32u_j^2 + 3\sum_{j\ne l}u_ju_l = 3U^2 - \tfrac32\sum_ju_j^2,\qquad U = \sum_ju_j ,
+\end{equation}
+because $3\sum_{j\ne l}u_ju_l = 3(U^2 - \sum_ju_j^2)$. Adding the independent Gaussian part, whose odd
+moments vanish, $\E[(g+X)^4] = \E g^4 + 6\E g^2\E X^2 + \E X^4 = 3s^2 + 6sU + 3U^2 -
+\tfrac32\sum u_j^2$:
+\begin{result}[Fourth moment of a Gaussian response with lines]
+\begin{equation}
+  \E[z^4\mid m] = 3(s+U)^2 - \tfrac32\sum_ju_j^2 ,
+  \qquad \kappa = \frac{3\tavg{(s+U)^2} - \tfrac32\tavg{\sum_ju_j^2}}{\tavg{s+U}^2}.
+\end{equation}
+\end{result}
+The line variances $u_j(t) = \tfrac12a_j(t)^2|H_d(f_j(t))|^2|H_{\mathrm{pre}}|^4$ are filtered by the
+envelope law like $s$. The kurtosis model of the closed loop uses this formula; the damage of the
+lines has no reliable closed form on a broad-band random response, so it is not modelled but measured.
+
+\emph{Damage elasticity.} Without lines, multiplying the PSD by $\lambda$ multiplies the amplitudes by
+$\sqrt\lambda$ and the damage by $\lambda^{b/2}$: $\partial\ln D/\partial\ln p = b/2$. With lines part of
+the damage is fixed and the elasticity $\eta_i$ is lower. It is measured on the first realisation by
+amplifying the random part by $1.1$ (its PSD by $1.1^2$):
+\begin{equation}
+  \eta_i = \frac{\ln\bigl(D_i(1.1\,x_r + x_\ell)/D_i(x_r+x_\ell)\bigr)}{2\ln1.1},
+\end{equation}
+limited to $[0.1\,b/2,\ b/2]$, and the damage rows of the closed-loop Jacobians are multiplied by
+$\eta_i/(b/2)$. Where the lines alone exceed the target damage, the program reports that those
+frequencies are over-tested, as the sine-on-random method of version~2.0 does.

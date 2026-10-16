@@ -1,0 +1,225 @@
+\part*{Part III --- MMVSD}
+\addcontentsline{toc}{part}{Part III --- MMVSD}
+
+\section{The MMVSD model}\label{sec:mmvsdmodel}
+
+\subsection{Why one envelope is not enough}
+
+In kFDS the same envelope multiplies all frequencies. When the windows are long compared with the
+response times, every oscillator follows the envelope and, by~\eqref{eq:kmod}, every response has the
+same kurtosis $\kappa_z = 3\tavg{e^4}/\tavg{e^2}^2$, whatever $\fn$. Measured vibration rarely
+behaves like this. A vehicle combines a road input whose level changes every few seconds (leptokurtic
+responses at low $\fn$), an engine that excites a middle band stationarily (Gaussian responses there)
+and impacts that excite high frequencies in short bursts (strongly leptokurtic responses at high
+$\fn$). The kurtosis of the responses is a function $\kappa_z(\fn)$, and a test that reproduces the FDS
+with a different function reproduces the damage with a different mix of cycles
+(Section~\ref{sec:kzdamage}).
+
+MMVSD (Moment-Matched Variable Spectral Density) prescribes both functions: the FDS $D_t(\fn)$ and the
+kurtosis of the responses $\kappa_t(\fn)$, measured on the reference (or combined over a mission
+with~\eqref{eq:kzmix}). It extends the idea of a variable spectral density, a PSD whose shape changes
+with time, to a continuous random field designed so that the two families of moments of the
+responses, their damage and their kurtosis, match the target.
+
+\subsection{An evolutionary spectrum}\label{sec:evol}
+
+The test signal is described by a \emph{local spectrum} that changes with time:
+\begin{result}[MMVSD signal model]
+\begin{equation}\label{eq:evol}
+  G(f,t) = P(f)\,m(f,t),\qquad m(f,t)\ge0,\qquad \tavg{m(f,\cdot)} = 1 \ \text{for every } f,
+\end{equation}
+and, given the field $m$, the signal is a Gaussian process with this local spectrum.
+\end{result}
+The time average of the local spectrum is $\tavg{G(f,\cdot)} = P(f)\tavg{m(f,\cdot)} = P(f)$: the PSD
+of the test is exactly $P$, whatever the modulation. The \emph{modulation field} $m$ says when and in
+which bands the energy is concentrated; its distribution sets how leptokurtic the responses are.
+
+$P$ is parametrised as a smooth correction of a \emph{shape prior} $\Pi(f)$, the PSD of the reference
+at its full resolution:
+\begin{equation}\label{eq:prior}
+  P(f) = \Pi(f)\,p(f),\qquad p(f) = \sum_j p_j\,\phi_j(f),
+\end{equation}
+where $\phi_j$ are the hat functions of the nodes (Section~\ref{sec:lalanne}) extended flat over $3/Q$
+beyond the first and last node. The peaks, notches and band edges of the reference are thus kept at
+full resolution, and the unknowns are the $n$ nodal factors $p_j$. Outside the band of the grid the
+test has no energy. The modulation is likewise described by its nodal values $m_j(t)$.
+
+\subsection{Local moments of the responses}\label{sec:operators}
+
+For a stationary input the spectral moments of the response of oscillator $i$
+are~\eqref{eq:moments}. For the local spectrum~\eqref{eq:evol}, with $P$ and $m$ written through their
+nodal values, the moments that the response would have if the local spectrum at time $t$ lasted for
+ever are
+\begin{equation}\label{eq:Sinf}
+  S^{\infty}_{k,i}(t) = \sum_j W^{(k)}_{ij}\,p_j\,m_j(t),
+  \qquad
+  W^{(k)}_{ij} = \int f^k\,|H_{d,i}(f)|^2\,|H_{\mathrm{pre}}(f)|^4\,\Pi(f)\,\phi_j(f)\,\dd f,
+\end{equation}
+for $k = 0,1,2,4$. The \emph{moment operators} $W^{(k)}$ generalise Lalanne's operator ($W^{(0)}$ with
+$\Pi=1$, the analogue response and no edge extension is the matrix $W$ of~\eqref{eq:W}). MMVSD uses
+the response $H_d$ of the digital oscillator~\eqref{eq:Hd} and the pre-filter of
+Section~\ref{sec:digital}, so that the model describes exactly the quantities that the measurement
+computes. The integrals are evaluated by the trapezoidal rule with 128 intervals per segment between
+nodes. The model assumes that within the band of an oscillator the local spectrum is the
+interpolation of its nodal values, i.e.\ that the modulation varies slowly along the frequency axis
+compared with the bandwidth $\fn/Q$.
+
+The response does not follow the local spectrum instantly but with the envelope law~\eqref{eq:tau}.
+Applying the low-pass filter $F_i$ of time constant $\tau_i = Q/(2\pi f_{\mathrm{n},i})$ to every
+moment gives the \emph{local moments}
+\begin{result}[Local moments of the responses]
+\begin{equation}\label{eq:S}
+  S_{k,i}(t) = F_i\!\left[\,\sum_j W^{(k)}_{ij}\,p_j\,m_j(\cdot)\right]\!(t),\qquad
+  F_i[y](t) = \int_0^\infty \frac{1}{\tau_i}e^{-u/\tau_i}\,y(t-u)\,\dd u .
+\end{equation}
+\end{result}
+$s_i(t) = S_{0,i}(t)$ is the local variance of the response of oscillator $i$. On the discrete time
+grid of the model (step $\delta$, see Section~\ref{sec:frames}) the filter becomes the recursion
+$y^F_l = a_iy^F_{l-1} + (1-a_i)y_l$ with $a_i = e^{-\delta/\tau_i}$, whose gain at zero frequency is
+$(1-a_i)/(1-a_i) = 1$. The test profile is periodic (it may be played several times), so the
+recursion is applied circularly, by multiplying the discrete Fourier transform of $y$ by
+$(1-a_i)/(1-a_ie^{-2\pi\ii q/N_t})$ at the frequency index $q$ of the $N_t$ points of the grid.
+
+\subsection{Kurtosis of the responses}\label{sec:kurtmodel}
+
+Given $m$, the response of oscillator $i$ is Gaussian with the local variance $s_i(t)$. By the last
+form of~\eqref{eq:kmod},
+\begin{result}[Response kurtosis in the model]
+\begin{equation}\label{eq:kappamodel}
+  \kappa_i = 3\,\frac{\tavg{s_i^2}}{\tavg{s_i}^2}.
+\end{equation}
+\end{result}
+Note that $\tavg{s_i} = \sum_jW^{(0)}_{ij}p_j\tavg{m_j} = \sum_jW^{(0)}_{ij}p_j$ does not depend on
+the modulation (the filter keeps the mean and $\tavg{m_j}=1$): the modulation changes the kurtosis
+and the damage, never the mean response variance.
+
+\subsection{Damage of the responses}\label{sec:damagemodel}
+
+Over a stretch of time short compared with the variations of $s_i$ but containing many cycles, the
+response is a stationary Gaussian process with the moments $S_{k,i}(t)$. Its damage rate is the
+expected damage per second of such a process: Dirlik's rate (Appendix~\ref{app:dirlik}), a function
+$d_{\mathrm{Dir}}(S_0,S_1,S_2,S_4)$ that reduces to the narrow-band rate $\nu_0^+(2S_0)^{b/2}
+\Gamma(1+b/2)$ for narrow bands, multiplied by the sampling factor~\eqref{eq:sampling} evaluated at
+the mean crossing rate $\nu_0^+ = \sqrt{S_2/S_0}$ (the cycles that dominate the damage are those of
+the zero crossings):
+\begin{result}[Damage in the model]
+\begin{equation}\label{eq:Dmodel}
+  D_i = \frac{K^b}{C}\,T\,\Bigl\langle d\bigl(S_{0,i},S_{1,i},S_{2,i},S_{4,i}\bigr)\Bigr\rangle ,
+  \qquad
+  d = d_{\mathrm{Dir}}(S_0,S_1,S_2,S_4)\;c_b\!\left(\frac{\sqrt{S_2/S_0}}{f_s}\right).
+\end{equation}
+\end{result}
+For a stationary Gaussian signal ($m\equiv1$) and a narrow band this is Lalanne's
+formula~\eqref{eq:dgauss}, corrected for the digital oscillator and the sampling. The program also
+offers the plain narrow-band (Rice) rate instead of Dirlik's.
+
+How well does the model describe a realisation? For a stationary Gaussian profile synthesised by the
+program at $f_s = 500$\,Hz with nodes up to 150\,Hz ($Q=10$, $b=8$), the measured response variances
+agree with $S_0$ within 2--7\,\% at all nodes, and the ratio of the rainflow damage to~\eqref{eq:Dmodel}
+averages about 0.9 (the remaining difference is the scatter of the largest cycles of a 60\,s
+realisation, whose median is below its mean). With the analogue operators and without the sampling
+factor, the same ratio drops to 0.15 at 113\,Hz.
+
+\subsection{The modulation field}\label{sec:field}
+
+The field must have, at every node, a prescribed depth of modulation, and between nodes and over time
+the correlations that describe the bursts of the reference: how long a burst lasts (\emph{burst
+duration} $T_c$, possibly different at every node) and how wide a band it covers (\emph{burst width}
+$B$, in octaves). It is built in three steps on a grid of $K$ time frames (spacing $h_t$, the
+\emph{hop}).
+
+\emph{1. A latent Gaussian field.} Draw independent standard normal numbers $\xi_{j\ell}$ for every
+node $j$ and frame $\ell$. Smooth every row in time with a Gaussian kernel of standard deviation
+$T_{c,j}/h_t$ frames (circularly, by multiplying its discrete Fourier transform by
+$\exp(-2\pi^2\varsigma_j^2\nu^2)$, $\nu$ in cycles per frame, $\varsigma_j = T_{c,j}/h_t$), standardise
+each row to unit variance, then mix the rows with the Gaussian kernel
+$\exp\bigl(-\tfrac12(\log_2f_{\mathrm{n},j}-\log_2f_{\mathrm{n},j'})^2/B^2\bigr)$ along the logarithmic
+frequency axis, and standardise again. The result $Z_{j\ell}$ is a Gaussian field with zero mean, unit
+variance at every node, and the prescribed correlations. A Gaussian kernel of standard deviation
+$\varsigma$ applied to white noise gives the correlation $e^{-\lambda^2/(4\varsigma^2)}$ at the lag
+$\lambda$ (the autocorrelation of the kernel is a Gaussian of variance $2\varsigma^2$); the correlation
+falls to $1/e$ at $\lambda = 2\varsigma$. The settings $T_c$ and $B$ are therefore half the $1/e$
+widths of the correlations.
+
+\emph{2. Ranks.} In every row, replace the values by their ranks $r_{j\ell}\in\{0,\dots,K-1\}$ over
+time. The ranks keep the information of when the field is high or low, which is all that the copula
+(the dependence structure) needs.
+
+\emph{3. Marginal.} The Gamma distribution of shape $a>0$ and scale $1/a$ has the density
+$p(m) = a^a m^{a-1}e^{-am}/\Gamma(a)$ for $m>0$. With the substitution $u = am$, its moments are
+$\E[m^k] = \frac{1}{a^k\Gamma(a)}\int_0^\infty u^{a+k-1}e^{-u}\dd u = \frac{\Gamma(a+k)}{a^k\Gamma(a)}$;
+since $\Gamma(s+1) = s\Gamma(s)$ (integrate by parts), $\E[m] = \frac{a\Gamma(a)}{a\Gamma(a)} = 1$ and
+$\E[m^2] = \frac{(a+1)a}{a^2} = 1+\frac1a$, so the variance is $1/a$. Map the ranks to the quantiles of
+this distribution with $a_j = 3/e_j$ (mean 1, variance $e_j/3$):
+\begin{equation}\label{eq:gammafield}
+  m_{j\ell} = F^{-1}_{a_j}\!\left(\frac{r_{j\ell}+\tfrac12}{K}\right),
+\end{equation}
+and divide every row by its mean so that $\tavg{m_j} = 1$ exactly. Because every row uses the same set
+of $K$ quantiles, the sample moments of $m_j$ depend only on $e_j$: there is no sampling noise in
+$\tavg{m_j^2}$ or $\tavg{m_j^{b/2}}$ (a \emph{stratified} copula). The quantiles of the Gamma
+distribution are tabulated for 200 shapes and interpolated, which makes the field cheap to rebuild
+during the design.
+
+\emph{Meaning of the depth $e_j$.} A Gaussian signal modulated directly by $m$ (local variance
+proportional to $m$) has, by~\eqref{eq:kmod}, the kurtosis $3\tavg{m^2}/\tavg{m}^2 =
+3(1+\Var m) = 3 + e$; $e$ is the \emph{excess kurtosis of the modulation}. The kurtosis of a
+response is lower when the bursts are short compared with $\tau_i$, by~\eqref{eq:papoulis}; the design
+(Section~\ref{sec:design}) finds the $e_j$ that give the target $\kappa_t$ through the full
+model~\eqref{eq:S}--\eqref{eq:kappamodel}, so this reduction is accounted for. The Gamma family is
+positive, has one shape parameter, contains the exponential distribution ($e=3$) and tends to the
+constant 1 as $e\to0$. The depth is capped (30 by default) to avoid unrealistic peaks.
+
+\subsection{Burst width and duration from the record}\label{sec:structure}
+
+The program estimates $B$ and $T_{c,j}$ from the reference. The record is cut into frames of 0.5\,s
+(hop 0.25\,s, Hann window, i.e.\ the taper $\sin^2(\pi n/L)$ over the $L$ samples of a frame); in every
+frame the power in the 1/3-octave band around every node is computed, and its logarithm
+$\beta_{j\ell}$ is taken. Even for a stationary signal these values scatter: the power of a band
+of $n_l$ lines is a sum of $2n_l$ squared Gaussian variables (the real and imaginary parts of each
+line), i.e.\ a \emph{chi-square} variable with $\nu = 2n_l$ degrees of freedom up to a scale factor.
+Half of such a variable, $Y$, has the Gamma distribution of shape $k = \nu/2$ and scale 1 (density
+$y^{k-1}e^{-y}/\Gamma(k)$), whose moments are $\E[Y^s] = \int_0^\infty y^{s+k-1}e^{-y}\dd y/\Gamma(k) =
+\Gamma(k+s)/\Gamma(k)$. The logarithm of $\E[e^{s\ln Y}] = \E[Y^s]$, the cumulant generating function
+of $\ln Y$, is therefore $\ln\Gamma(k+s)-\ln\Gamma(k)$; its second derivative at $s=0$ is the
+variance of $\ln Y$, the \emph{trigamma function} $\psi'(k) = \frac{\dd^2}{\dd k^2}\ln\Gamma(k)$ at
+$k=\nu/2$ (a scale factor does not change the variance of a logarithm). This noise variance is subtracted from the variance of each band before the
+correlations are normalised (the effective $\nu$ of a band with $n_l$ lines is taken as $2n_l/1.5$,
+since the Hann window correlates neighbouring lines). Bands whose remaining variance is negligible
+do not fluctuate and are left out. Then:
+\begin{itemize}[nosep]
+\item the time correlation of each band is its normalised autocorrelation; the lag where it falls
+below $1/e$, halved, is $T_{c,j}$ (smoothed along the nodes and interpolated to all of them);
+\item the frequency correlation is the average correlation between bands as a function of their
+distance in octaves; the distance where it falls below $1/e$, halved, is $B$ (between 1/12 and 3
+octaves).
+\end{itemize}
+The burst duration is finally kept above $\max(2\tau_i, 0.25\,\mathrm{s})$: shorter bursts would not
+reach the responses (Section~\ref{sec:papoulis}) and would only require deeper modulation.
+
+\subsection{Keeping the time--frequency pattern of the record}\label{sec:pattern}
+
+Instead of a random field with the statistics of the record, the field can follow the record itself
+(\code{modulation = "pattern"}): the bursts then occur in the same bands and in the same order as in
+the reference. The logarithm of the band power of the record, $\beta_j(t)$, is computed at every node
+with the frame length that the synthesis uses at that node (so the time resolution is the one the
+synthesis can reproduce), smoothed lightly, interpolated on the frame grid of the test and centred,
+$\tilde\beta_j = \beta_j - \tavg{\beta_j}$. The field is
+\begin{equation}
+  m_j(t) = \frac{\exp\bigl(\gamma_j\tilde\beta_j(t)\bigr)}{\tavg{\exp(\gamma_j\tilde\beta_j)}} ,
+\end{equation}
+where the exponent $\gamma_j\ge0$ sets the depth: $\gamma_j=1$ reproduces the depth of the record, and
+the design is free to change it to meet $\kappa_t$ and $D_t$. The map from $\gamma_j$ to the excess
+$e_j = 3\Var(m_j)$ is tabulated on a grid of exponents and made monotone, so that the design can
+work with $e_j$ as for the random field.
+
+A test shorter than the record needs a \emph{mapping} of the reference time onto the test time:
+\begin{itemize}[nosep]
+\item \code{blocks} (default): blocks of a few seconds taken evenly across the whole record and
+concatenated; every part of the record is represented and the burst durations are kept;
+\item \code{compress}: the whole record squeezed into the test (the band power is averaged over each
+test frame); the order of all events is kept and the bursts are shortened;
+\item a test as long as the record uses it frame by frame (\code{identity}); a longer one repeats it
+(\code{loop}).
+\end{itemize}
+The agreement between the band-power pattern of the result and the mapped reference is reported as
+the median, over the nodes, of their correlation coefficient (1: same pattern).

@@ -1,0 +1,83 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{fontspec}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools,bm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{microtype}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{tcolorbox}
+\usepackage[hidelinks,bookmarksnumbered]{hyperref}
+\usepackage{graphicx}
+
+\setlength{\parindent}{0pt}
+\emergencystretch=3em
+\setlength{\parskip}{0.55em}
+\numberwithin{equation}{section}
+
+\newtcolorbox{result}[1][]{colback=Blue!3,colframe=Blue!45!black,boxrule=0.5pt,arc=1.5pt,
+  left=6pt,right=6pt,top=4pt,bottom=4pt,title={#1},fonttitle=\bfseries\small,coltitle=white}
+\newtcolorbox{remark}{colback=black!3,colframe=black!35,boxrule=0.4pt,arc=1.5pt,left=6pt,right=6pt,top=3pt,bottom=3pt}
+
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Var}{\operatorname{Var}}
+\newcommand{\tavg}[1]{\left\langle #1 \right\rangle}
+\newcommand{\dd}{\mathrm{d}}
+\newcommand{\fn}{f_{\mathrm{n}}}
+\newcommand{\wn}{\omega_{\mathrm{n}}}
+\newcommand{\wdm}{\omega_{\mathrm{d}}}
+\newcommand{\ii}{\mathrm{j}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\Tl}{T_{\mathrm{L}}}
+
+\title{\textbf{vibsynth 2.1 --- Theory manual}\\[0.4em]
+\large Mission synthesis, kurtosis control and MMVSD,\\ explained step by step}
+\author{Emanuele Pesaresi}
+\date{Version 2.1.0, October 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent This manual explains every concept used by the \code{vibsynth} package, from the definition of a
+power spectral density to the Moment-Matched Variable Spectral Density (MMVSD) method introduced in
+version~2.1. Each quantity is defined before it is used, and every derivation is written out in full,
+so that the text can be followed by reading alone. Part~I builds the common ground (random signals, the
+single-degree-of-freedom oscillator, fatigue damage, the Fatigue Damage Spectrum). Part~II describes the
+mission synthesis and kurtosis control methods of version~2.0. Part~III derives the MMVSD method, which
+prescribes, in addition to the Fatigue Damage Spectrum, the kurtosis of the response of every
+oscillator, and its treatment of sine-on-random blocks. The appendices contain the longer
+integrations (Lalanne's operator, the ramp-invariant oscillator filter) and the formulas quoted from
+the literature.
+\end{abstract}
+
+\tableofcontents
+\clearpage
+
+\input{ch01_intro}
+\input{ch02_signals}
+\input{ch03_oscillator}
+\input{ch04_damage}
+\input{ch05_synthesis}
+\input{ch06_methods}
+\input{ch07_mmvsd_model}
+\input{ch08_mmvsd_algorithm}
+\input{ch09_lines}
+\input{ch10_practice}
+\input{ch11_diagnostics}
+
+\section*{Acknowledgements}
+\addcontentsline{toc}{section}{Acknowledgements}
+
+The methods were developed during my PhD at the University of Bologna; I thank Prof.\ Marco Troncossi
+and Easting s.r.l.s.\ for our joint work in those years. This manual and the Python implementation
+were written with the help of Claude (Anthropic); all derivations were checked against the
+implementation and numerically.
+
+\appendix
+\input{appA_lalanne}
+\input{appB_smallwood}
+\input{appC_quoted}
+
+\end{document}

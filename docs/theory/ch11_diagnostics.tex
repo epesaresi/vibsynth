@@ -1,0 +1,80 @@
+\section{Diagnostics and checks}\label{sec:diagnostics}
+
+The interface offers a set of diagnostics of a single signal and of a result. This section defines
+them.
+
+\subsection{Statistics over time and amplitude}
+
+\emph{Running RMS and kurtosis.} The signal is cut into consecutive windows of $L_w$ seconds; in each
+window the RMS and the kurtosis~\eqref{eq:kurtosis} are computed. A Gaussian stationary signal gives a
+nearly constant RMS and a kurtosis near 3 in every window; bursts show up as RMS peaks. The
+distribution of the 1-second RMS over the record (shown for a result and its target) describes the
+burst structure that kFDS and MMVSD reproduce.
+
+\emph{Probability density.} The histogram of the samples is compared with the Gaussian density with
+the same mean and standard deviation, on a logarithmic scale where the tails are visible.
+
+\subsection{Time--frequency diagnostics}
+
+\emph{Spectrogram.} The short-time Fourier transform (STFT) cuts the signal into overlapping
+windowed segments (Hann window, 50\,\% overlap) and computes the PSD of each, giving the power as a
+function of time and frequency.
+
+\emph{Spectral kurtosis.} Let $X(f,t)$ be the STFT coefficient at frequency $f$ of the segment at time
+$t$. The spectral kurtosis is
+\begin{equation}
+  SK(f) = \frac{\tavg{|X(f,\cdot)|^4}}{\tavg{|X(f,\cdot)|^2}^2} - 2 .
+\end{equation}
+For a stationary Gaussian signal, $X = U + \ii V$ with $U$ and $V$ independent zero-mean Gaussian
+variables of equal variance $\sigma^2/2$. Then $|X|^2 = U^2+V^2$ has the exponential distribution with
+mean $\sigma^2$ (the squared length of a two-dimensional Gaussian vector; with
+Section~\ref{sec:rayleigh}, $p(A) = (2A/\sigma^2)e^{-A^2/\sigma^2}$ for $A = |X|$, and the
+substitution $u = A^2$ gives $p(u) = e^{-u/\sigma^2}/\sigma^2$), whose second moment is
+$\int_0^\infty u^2e^{-u/\sigma^2}\dd u/\sigma^2 = 2\sigma^4$. Hence $SK = 2\sigma^4/\sigma^4 - 2 = 0$. A
+band whose power changes from segment to segment (bursts) has $SK>0$; a stationary sine, whose
+$|X|$ is constant, has $SK = 1 - 2 = -1$. The \emph{kurtogram} shows $SK$ as a function of frequency
+and of the window length, since short bursts are seen only with short windows.
+
+\emph{Response of one oscillator.} The pseudo-acceleration $\wn^2z(t)$ of a chosen oscillator, with
+its statistics, shows directly how the input is filtered (Section~\ref{sec:papoulis}). The curves
+of the kurtosis and standard deviation of all responses versus $\fn$ are the quantities $\kappa_z(\fn)$
+and $\sigma_{\wn^2 z}(\fn)$ of Part~I, computed in one pass over the oscillators.
+
+\subsection{Approximate FDS}
+
+Besides the exact rainflow FDS and the Gaussian formula, the program offers the fast approximation of
+the dissertation. For a narrow-band response, the large values of $z$ occur near the peaks of the
+cycles, and a cycle of amplitude $A$ contributes to $\sum_kz_k^b\Delta t$ (over the samples where $z$ is
+positive) an amount proportional to $A^b/\fn$. Hence
+\begin{equation}
+  D(\fn) \approx h(\fn)\,\frac{K^b}{C}\,\fn\,\Delta t\sum_{k:\ z_k>\rho\,z_{\max}} z_k^b ,
+  \qquad \rho = 400^{-1/b},
+\end{equation}
+where only the samples above the fraction $\rho$ of the maximum are summed (smaller cycles contribute
+little to the damage when $b$ is large) and $h(\fn)$ absorbs the proportionality constant and the
+residual effects of the cycle shapes. The program calibrates $h(\fn)$ on the first 20\,s of the
+signal itself against the exact rainflow damage.
+
+\subsection{Sensitivity to $b$ and $Q$}
+
+A profile is designed with one damage model. If the true exponent of the S--N curve or the damping
+of the component differ, the profile and the target no longer have the same FDS. The program
+recomputes the FDS of both with other values of $b$ or $Q$ and shows their ratio: a ratio that stays
+close to 1 means that the equivalence does not depend on the exact damage model.
+
+\subsection{Matching the amplitude distribution}
+
+A profile can be given exactly the amplitude distribution of the target by a monotone mapping of its
+samples: the sample of rank $r$ (out of $N$) is replaced by the quantile of the target values at the
+probability $(r+\tfrac12)/N$. The order of the samples, hence the time structure, is kept; the PSD and
+the FDS change slightly, so the program measures them again after the mapping.
+
+\subsection{Shaker limits}
+
+A shaker has limits of acceleration, velocity and stroke (peak-to-peak displacement). Velocity and
+displacement are obtained from the acceleration in the frequency domain, dividing every line by
+$\ii\omega$ (velocity) or by $-\omega^2$ (displacement), after a high-pass filter with the gain
+$1/\sqrt{1+(f_{\mathrm{hp}}/f)^8}$ (the magnitude of a fourth-order Butterworth filter): without it
+the lowest lines, divided by a very small $\omega^2$, would dominate the displacement. If the stroke
+is exceeded, the program searches the lowest high-pass frequency that brings it within the limit;
+applying that filter in the pre-processing changes the profile only below that frequency.

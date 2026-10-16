@@ -16,7 +16,7 @@ import numpy as np
 
 from . import __version__
 from . import preprocess as PP
-from .analysis import Reference, analyze_reference, evaluate
+from .analysis import Reference, analyze_reference, evaluate, response_statistics
 from .fds import FDSParams, fds_time
 from .mission import Group, Situation, combine, spec_target
 from .pipeline import run_method
@@ -279,8 +279,14 @@ class Workspace:
         ref = self.target(ref_id, life_h)
         res = run_method(ref, method, float(duration), log=log, **opts)
         scale = res.info.get("fds_target_scale", 1.0)
+        if ref.response_kurtosis is None and res.info.get("k_response") is not None:
+            try:                                     # target k_z for the comparison (one pass)
+                response_statistics(ref)
+            except ValueError:
+                pass
         ev = evaluate(res.x, res.fs, ref, repeats=res.repeats, fds=res.info.get("fds_measured"),
-                      mrs=res.info.get("mrs_measured"), target_scale=scale)
+                      mrs=res.info.get("mrs_measured"), target_scale=scale,
+                      k_response=res.info.get("k_response"))
         label = name or f"{res.method} {duration:g}s <- {self._label(ref_id)}"
         meta = {"method": res.method, "target": ref_id, "target_life_h": ref.life / 3600,
                 "duration": float(duration), "repeats": res.repeats, "options": opts,
@@ -291,7 +297,10 @@ class Workspace:
         it.meta["result"] = {k: v for k, v in res.info.items()
                              if k in ("fds_measured", "mrs_measured", "fds_error_history", "alpha",
                                       "window_s", "pattern", "t_burst_s", "n_bursts", "tones",
-                                      "fds_target_scale", "predicted_kurtosis", "lambda")}
+                                      "fds_target_scale", "predicted_kurtosis", "lambda", "k_response",
+                                      "k_target", "k_model", "excess", "modulation", "modulation_hop_s",
+                                      "frames", "freq_corr_oct", "time_corr_s", "pattern_mapping",
+                                      "tf_corr", "lines")}
         it.meta["envelope"] = res.envelope
         it.meta["design"] = {"fn": res.design_fn, "psd": res.design_psd}
         it.meta["eval"] = ev
@@ -303,6 +312,11 @@ class Workspace:
     def reevaluate(self, rid):
         it = self.get(rid)
         ref = self.target(it.meta["target"], it.meta.get("life_h_override"))
+        if ref.response_kurtosis is None:
+            try:
+                response_statistics(ref)
+            except ValueError:
+                pass
         ev = evaluate(it.x, it.fs, ref, repeats=it.meta.get("repeats", 1),
                       target_scale=it.meta.get("result", {}).get("fds_target_scale", 1.0))
         it.meta["eval"] = ev
