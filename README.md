@@ -1,6 +1,6 @@
 # vibsynth
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23298865.svg)](https://doi.org/10.5281/zenodo.23298865)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23298864.svg)](https://doi.org/10.5281/zenodo.23298864)
 [![tests](https://github.com/epesaresi/vibsynth/actions/workflows/tests.yml/badge.svg)](https://github.com/epesaresi/vibsynth/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
@@ -292,8 +292,11 @@ introduced the methods and, for the software itself, the archived release
 > of Bologna, 2021. https://amsdottorato.unibo.it/id/eprint/9647/
 
 > E. Pesaresi, *vibsynth: mission synthesis and kurtosis control for
-> accelerated vibration testing*, Zenodo, 2026.
-> https://doi.org/10.5281/zenodo.23298865
+> accelerated vibration testing*, version 2.1.0, Zenodo, 2026.
+> https://doi.org/10.5281/zenodo.23424452
+
+The DOI https://doi.org/10.5281/zenodo.23298864 covers all versions and always
+resolves to the latest one; version 2.0.0 is https://doi.org/10.5281/zenodo.23298865.
 
 ## Acknowledgements
 
