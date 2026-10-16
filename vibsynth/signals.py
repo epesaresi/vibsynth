@@ -48,7 +48,7 @@ def natural_frequencies(fmin: float, fmax: float, scale: str = "octave",
 
 def welch_psd(x: np.ndarray, fs: float, resolution: float | None = None,
               nfft: int | None = None) -> tuple[np.ndarray, np.ndarray]:
-    """One-sided Welch PSD with MATLAB pwelch defaults (Hamming, 50 % overlap)."""
+    """One-sided Welch PSD (Hamming window, 50 % overlap, no detrending)."""
     x = np.asarray(x, dtype=float)
     if nfft is None:
         nfft = int(round(fs / (resolution or 1.0)))

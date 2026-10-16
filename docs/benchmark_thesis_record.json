@@ -10,13 +10,13 @@
   "rms": 8.424868406749134,
   "kurtosis": 6.474842705918186,
   "crest": 7.243906764009078,
-  "duration": 287.3320000003512
+  "duration": 287.332
  },
  "rows": [
   {
    "case": "no acceleration (287 s)",
    "method": "Gaussian",
-   "seconds": 3.5,
+   "seconds": 3.4,
    "fds_max": 4.4,
    "fds_median": 0.1,
    "kurtosis": 3.03,
@@ -24,13 +24,14 @@
    "crest": 5.1,
    "psd_db": 6.2,
    "mrs_max_ratio": 0.95,
+   "kz_median": 9.98,
    "iterations": 11,
    "warnings": []
   },
   {
    "case": "no acceleration (287 s)",
    "method": "kFDS",
-   "seconds": 4.7,
+   "seconds": 4.6,
    "fds_max": 4.3,
    "fds_median": 0.1,
    "kurtosis": 6.49,
@@ -38,13 +39,14 @@
    "crest": 9.0,
    "psd_db": 3.9,
    "mrs_max_ratio": 1.17,
+   "kz_median": 6.79,
    "iterations": 12,
    "warnings": []
   },
   {
    "case": "no acceleration (287 s)",
    "method": "RF",
-   "seconds": 5.7,
+   "seconds": 6.4,
    "fds_max": 4.0,
    "fds_median": 0.6,
    "kurtosis": 12.58,
@@ -52,13 +54,14 @@
    "crest": 11.3,
    "psd_db": 3.1,
    "mrs_max_ratio": 1.23,
+   "kz_median": 1.93,
    "iterations": 15,
    "warnings": []
   },
   {
    "case": "no acceleration (287 s)",
    "method": "PF",
-   "seconds": 5.6,
+   "seconds": 5.8,
    "fds_max": 4.8,
    "fds_median": 0.1,
    "kurtosis": 9.32,
@@ -66,13 +69,14 @@
    "crest": 11.6,
    "psd_db": 0.6,
    "mrs_max_ratio": 1.36,
+   "kz_median": 2.51,
    "iterations": 16,
    "warnings": []
   },
   {
    "case": "no acceleration (287 s)",
    "method": "PSF",
-   "seconds": 5.7,
+   "seconds": 6.2,
    "fds_max": 4.8,
    "fds_median": 0.1,
    "kurtosis": 9.32,
@@ -80,13 +84,29 @@
    "crest": 11.6,
    "psd_db": 0.6,
    "mrs_max_ratio": 1.36,
+   "kz_median": 2.51,
    "iterations": 16,
+   "warnings": []
+  },
+  {
+   "case": "no acceleration (287 s)",
+   "method": "MMVSD",
+   "seconds": 50.1,
+   "fds_max": 20.6,
+   "fds_median": 0.2,
+   "kurtosis": 12.18,
+   "rms": 7.97,
+   "crest": 11.9,
+   "psd_db": 1.4,
+   "mrs_max_ratio": 1.34,
+   "kz_median": 0.7,
+   "iterations": 21,
    "warnings": []
   },
   {
    "case": "acceleration x5 (2873 s life in 575 s)",
    "method": "Gaussian",
-   "seconds": 4.8,
+   "seconds": 5.3,
    "fds_max": 4.3,
    "fds_median": 0.1,
    "kurtosis": 3.01,
@@ -94,13 +114,14 @@
    "crest": 4.6,
    "psd_db": 8.0,
    "mrs_max_ratio": 1.3,
+   "kz_median": 9.98,
    "iterations": 11,
    "warnings": []
   },
   {
    "case": "acceleration x5 (2873 s life in 575 s)",
    "method": "kFDS",
-   "seconds": 6.4,
+   "seconds": 7.2,
    "fds_max": 4.7,
    "fds_median": 0.2,
    "kurtosis": 6.48,
@@ -108,13 +129,14 @@
    "crest": 9.1,
    "psd_db": 5.2,
    "mrs_max_ratio": 1.66,
+   "kz_median": 6.58,
    "iterations": 11,
    "warnings": []
   },
   {
    "case": "acceleration x5 (2873 s life in 575 s)",
    "method": "RF",
-   "seconds": 10.4,
+   "seconds": 12.3,
    "fds_max": 4.5,
    "fds_median": 0.5,
    "kurtosis": 22.2,
@@ -122,13 +144,14 @@
    "crest": 15.6,
    "psd_db": 3.0,
    "mrs_max_ratio": 1.83,
+   "kz_median": 9.33,
    "iterations": 16,
    "warnings": []
   },
   {
    "case": "acceleration x5 (2873 s life in 575 s)",
    "method": "PF",
-   "seconds": 5.4,
+   "seconds": 6.0,
    "fds_max": 4.9,
    "fds_median": 0.4,
    "kurtosis": 18.29,
@@ -136,13 +159,14 @@
    "crest": 13.9,
    "psd_db": 1.1,
    "mrs_max_ratio": 1.6,
+   "kz_median": 18.3,
    "iterations": 10,
    "warnings": []
   },
   {
    "case": "acceleration x5 (2873 s life in 575 s)",
    "method": "PSF",
-   "seconds": 8.5,
+   "seconds": 8.8,
    "fds_max": 4.6,
    "fds_median": 0.1,
    "kurtosis": 9.13,
@@ -150,7 +174,23 @@
    "crest": 11.4,
    "psd_db": 2.1,
    "mrs_max_ratio": 1.63,
+   "kz_median": 2.31,
    "iterations": 15,
+   "warnings": []
+  },
+  {
+   "case": "acceleration x5 (2873 s life in 575 s)",
+   "method": "MMVSD",
+   "seconds": 98.2,
+   "fds_max": 0.0,
+   "fds_median": 0.0,
+   "kurtosis": 12.02,
+   "rms": 9.94,
+   "crest": 11.3,
+   "psd_db": 2.5,
+   "mrs_max_ratio": 1.73,
+   "kz_median": 0.9,
+   "iterations": 31,
    "warnings": []
   },
   {
@@ -164,13 +204,14 @@
    "crest": 3.9,
    "psd_db": 8.8,
    "mrs_max_ratio": 1.24,
+   "kz_median": 10.11,
    "iterations": 13,
    "warnings": []
   },
   {
    "case": "acceleration x9.6 (287 s life in 30 s)",
    "method": "kFDS",
-   "seconds": 0.8,
+   "seconds": 0.9,
    "fds_max": 4.1,
    "fds_median": 0.1,
    "kurtosis": 6.39,
@@ -178,6 +219,7 @@
    "crest": 7.3,
    "psd_db": 5.9,
    "mrs_max_ratio": 1.63,
+   "kz_median": 6.12,
    "iterations": 16,
    "warnings": []
   },
@@ -187,11 +229,12 @@
    "seconds": 3.4,
    "fds_max": 13.3,
    "fds_median": 0.0,
-   "kurtosis": 38.55,
+   "kurtosis": 38.58,
    "rms": 8.44,
    "crest": 13.3,
    "psd_db": 4.1,
    "mrs_max_ratio": 1.64,
+   "kz_median": 18.71,
    "iterations": 44,
    "warnings": []
   },
@@ -199,34 +242,53 @@
    "case": "acceleration x9.6 (287 s life in 30 s)",
    "method": "PF",
    "seconds": 1.0,
-   "fds_max": 169.7,
-   "fds_median": 43.8,
-   "kurtosis": 21.4,
-   "rms": 8.63,
-   "crest": 12.9,
+   "fds_max": 176.2,
+   "fds_median": 41.7,
+   "kurtosis": 22.06,
+   "rms": 8.64,
+   "crest": 13.0,
    "psd_db": 3.0,
    "mrs_max_ratio": 1.58,
+   "kz_median": 26.7,
    "iterations": 9,
    "warnings": [
     "PF: bursts shorter than 3 decay times of the 5 Hz oscillator (needed to keep G_L >= 0); low-frequency damage is not quasi-static and converges less precisely.",
-    "PF: FDS error 170 % after the corrections. PSD, RMS and FDS are not all reachable here (the low-energy part, which carries the reference PSD, controls the damage at some frequencies). PSF or kFDS will converge."
+    "PF: FDS error 176 % after the corrections. PSD, RMS and FDS are not all reachable here (the low-energy part, which carries the reference PSD, controls the damage at some frequencies). PSF or kFDS will converge."
    ]
   },
   {
    "case": "acceleration x9.6 (287 s life in 30 s)",
    "method": "PSF",
-   "seconds": 1.1,
-   "fds_max": 451.9,
-   "fds_median": 85.9,
-   "kurtosis": 3.23,
-   "rms": 11.64,
-   "crest": 4.9,
-   "psd_db": 2.9,
-   "mrs_max_ratio": 1.22,
-   "iterations": 12,
+   "seconds": 1.2,
+   "fds_max": 190.9,
+   "fds_median": 37.7,
+   "kurtosis": 4.74,
+   "rms": 11.58,
+   "crest": 6.7,
+   "psd_db": 3.2,
+   "mrs_max_ratio": 1.47,
+   "kz_median": 4.45,
+   "iterations": 14,
    "warnings": [
     "PF: bursts shorter than 3 decay times of the 5 Hz oscillator (needed to keep G_L >= 0); low-frequency damage is not quasi-static and converges less precisely.",
-    "PSF: FDS error 452 % after the corrections. The test is probably too short for bursts of a few decay times of the lowest oscillator; try another seed, a longer test or kFDS."
+    "PSF: FDS error 191 % after the corrections. The test is probably too short for bursts of a few decay times of the lowest oscillator; try another seed, a longer test or kFDS."
+   ]
+  },
+  {
+   "case": "acceleration x9.6 (287 s life in 30 s)",
+   "method": "MMVSD",
+   "seconds": 5.7,
+   "fds_max": 0.9,
+   "fds_median": 0.0,
+   "kurtosis": 12.39,
+   "rms": 11.62,
+   "crest": 8.5,
+   "psd_db": 3.8,
+   "mrs_max_ratio": 1.49,
+   "kz_median": 1.46,
+   "iterations": 31,
+   "warnings": [
+    "the closed loop moved the PSD by more than 8x from the design at 17.8-20 Hz (oscillators whose damage is produced by another band, or rare cycles): try another seed or a design anchor (cl_anchor ~0.01)"
    ]
   }
  ]

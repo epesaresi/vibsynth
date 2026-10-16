@@ -1,0 +1,47 @@
+\section{Results quoted from the literature}\label{app:quoted}
+
+\subsection*{C.1 Dirlik's distribution of rainflow ranges}\label{app:dirlik}
+
+Dirlik fitted, on a large set of simulated Gaussian processes, a closed-form probability density of
+the rainflow ranges $S$ of a stationary Gaussian process with the spectral moments $m_0,m_1,m_2,m_4$
+(Section~\ref{sec:respvar}). With
+\begin{equation}
+  x_m = \frac{m_1}{m_0}\sqrt{\frac{m_2}{m_4}},\qquad \gamma = \frac{m_2}{\sqrt{m_0m_4}},
+\end{equation}
+\begin{gather}
+  D_1 = \frac{2(x_m-\gamma^2)}{1+\gamma^2},\qquad
+  R = \frac{\gamma - x_m - D_1^2}{1-\gamma-D_1+D_1^2},\qquad
+  D_2 = \frac{1-\gamma-D_1+D_1^2}{1-R},\\
+  D_3 = 1-D_1-D_2,\qquad
+  Q_D = \frac{1.25(\gamma-D_3-D_2R)}{D_1},
+\end{gather}
+the density of the normalised range $Z = S/(2\sqrt{m_0})$ is
+\begin{equation}
+  p(Z) = \frac{D_1}{Q_D}e^{-Z/Q_D} + \frac{D_2\,Z}{R^2}e^{-Z^2/(2R^2)} + D_3\,Z\,e^{-Z^2/2},
+\end{equation}
+and the cycles occur at the rate of the peaks, $\nu_p = \sqrt{m_4/m_2}$. The damage uses the amplitude
+$A = S/2 = \sqrt{m_0}\,Z$. Its moment of order $b$ follows term by term: for the exponential term the
+substitution $u = Z/Q_D$ gives $\int_0^\infty Z^b\frac{D_1}{Q_D}e^{-Z/Q_D}\dd Z = D_1Q_D^b\Gamma(1+b)$;
+the other two terms are Rayleigh densities with $\sigma = R$ and $\sigma=1$ (weighted by $D_2$ and $D_3$),
+whose moments are given by~\eqref{eq:rayleighmoment}. Hence the expected damage per second
+\begin{equation}
+  d_{\mathrm{Dir}} = \frac{K^b}{C}\,\nu_p\,m_0^{b/2}\Bigl[D_1Q_D^b\,\Gamma(1+b) +
+  2^{b/2}\,\Gamma\!\left(1+\tfrac b2\right)\bigl(D_2|R|^b + D_3\bigr)\Bigr].
+\end{equation}
+For a narrow-band process ($\gamma\to1$) the formula tends to the Rayleigh result $\nu_0^+(2m_0)^{b/2}
+\Gamma(1+b/2)$ of~\eqref{eq:dgauss} (checked numerically in the tests within 2\,\% for a pure tone
+spectrum). The program evaluates the formula with safeguards against divisions by zero for nearly
+pure tones.
+
+\subsection*{C.2 Central limit theorem}
+
+A sum of many independent random variables with finite variances, none of which dominates the sum,
+is approximately Gaussian. Section~\ref{sec:multisine} applies it to the lines of a random-phase
+multisine.
+
+\subsection*{C.3 Welch's PSD estimate}
+
+Welch's estimate averages the periodograms of overlapping windowed segments. Its expectation is the
+true PSD smoothed over the resolution of a segment, and its relative scatter decreases as the square
+root of the number of independent segments. The program uses segments of length equal to the inverse of
+the requested resolution, a Hamming window and 50\,\% overlap.

@@ -9,12 +9,17 @@ __all__ = ["run_method"]
 
 def run_method(ref: Reference, method: str, duration: float, *, kurtosis=None, rms=None,
                pattern=None, seed=None, iterations=30, tol=0.05, window=None, fs=None,
-               tones=None, prominence_db=10.0, drift=0.0, log=None):
+               tones=None, prominence_db=10.0, drift=0.0, log=None, modulation="random",
+               mapping="blocks", block_s=None, lines="lines", max_excess=30.0, freq_corr=None,
+               time_corr=None, cl_anchor=0.0):
     """Synthesise `duration` seconds that reproduce the target.
 
     kurtosis / rms default to the target values. For the kurtosis-control
     methods (mlv, vsd, pm) the FDS is not imposed; their FDS is compared with
     the target over the same duration. `fs` defaults to the target's rate.
+    MMVSD prescribes the FDS and the kurtosis of the oscillator responses of
+    the target; its own options are modulation, mapping, block_s, lines,
+    max_excess, freq_corr, time_corr and cl_anchor (see mmvsd.synthesize).
     """
     m = method.lower()
     fs = fs or ref.fs
@@ -44,6 +49,12 @@ def run_method(ref: Reference, method: str, duration: float, *, kurtosis=None, r
             if log:
                 log("detected tones: " + (", ".join(f"{f:.1f} Hz ({a:.3g})" for f, a in tones) or "none"))
         return S.sine_on_random(ref.fds, duration, fs, ref.params, tones, ref.life, drift=drift, **fdskw)
+    if m == "mmvsd":
+        from .mmvsd import synthesize as mmvsd_synthesize
+        return mmvsd_synthesize(ref, duration, fs=fs, seed=seed, iterations=iterations, tol=tol,
+                                modulation=modulation or "random", mapping=mapping or "blocks",
+                                block_s=block_s, lines=lines or "lines", max_excess=max_excess or 30.0,
+                                freq_corr=freq_corr, time_corr=time_corr, cl_anchor=cl_anchor or 0.0, log=log)
     if m == "mlv":
         res = S.mlv(ref.psd_f, ref.psd, duration, fs, k, segments=segs, pattern=pattern,
                     window=window, **common)

@@ -183,6 +183,19 @@
         <label>SoR prominence [dB]<input id="sy_prom" value="10"></label>
         <label>SoR drift<input id="sy_drift" placeholder="0"></label>
       </div>
+      <details id="sy_mm" class="mm"><summary>MMVSD options</summary>
+        <div class="grid2">
+          <label>Modulation<select id="sy_mm_mod"><option value="random">random field (statistics of the target)</option><option value="pattern">time-frequency pattern of the record</option></select></label>
+          <label>Shorter test: mapping<select id="sy_mm_map"><option value="blocks">blocks of the record</option><option value="compress">compress the whole record</option></select></label>
+          <label>Sine-on-random blocks<select id="sy_mm_lines"><option value="lines">as deterministic lines</option><option value="random">in the random part</option><option value="off">no detection</option></select></label>
+          <label>Block length [s]<input id="sy_mm_block" placeholder="auto"></label>
+          <label>Burst width [oct]<input id="sy_mm_fc" placeholder="from the record"></label>
+          <label>Burst duration [s]<input id="sy_mm_tc" placeholder="from the record"></label>
+          <label>Max. modulation excess<input id="sy_mm_exc" value="30"></label>
+          <label>Design anchor<input id="sy_mm_anchor" placeholder="0"></label>
+        </div>
+        <p class="hint">MMVSD prescribes the FDS and the kurtosis of the oscillator responses k<sub>z</sub>(f<sub>n</sub>) of the target; the Kurtosis and RMS fields are not used.</p>
+      </details>
       <details><summary>Batch: several seeds and / or methods</summary>
         <label class="block">Seeds<input id="sy_seeds" placeholder="e.g. 1 2 3 4 5"></label>
         <div id="sy_multi" class="checks"></div>
@@ -205,6 +218,8 @@
         <div id="rs_audio"></div>
         <div class="cols2"><div id="ch_rs_fds"></div><div id="ch_rs_mrs"></div></div>
         <div class="cols2"><div id="ch_rs_psd"></div><div id="ch_rs_rms"></div></div>
+        <div class="cols2" id="rs_kzrow"><div id="ch_rs_kz"></div><div id="ch_rs_mod"></div></div>
+        <div id="rs_mminfo" class="small"></div>
         <div class="row wrap">
           <label class="inline">Time history<select id="rs_fmt"><option>mat</option><option>csv</option><option>txt</option><option>npy</option><option>wav</option></select></label><button id="rs_dl">Download</button>
           <label class="inline">Comparison curves<select id="rs_cfmt"><option>csv</option><option>xlsx</option><option>mat</option><option>json</option></select></label><button id="rs_cdl">Download</button>

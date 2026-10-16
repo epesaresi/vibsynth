@@ -1,0 +1,171 @@
+{
+ "settings": {
+  "fmin": 5,
+  "fmax": 300,
+  "Q": 10,
+  "b": 8,
+  "duration": 60.0
+ },
+ "rows": [
+  {
+   "case": "multisource",
+   "method": "gaussian",
+   "seeds": [
+    1,
+    2,
+    3
+   ],
+   "fds_max": 135.5,
+   "fds_max_each": [
+    102.1,
+    112.1,
+    192.4
+   ],
+   "fds_median": 33.4,
+   "kz_median": 6.65,
+   "kurtosis": 3.01,
+   "mrs_max_ratio": 1.24,
+   "seconds": 0.8
+  },
+  {
+   "case": "multisource",
+   "method": "kfds",
+   "seeds": [
+    1,
+    2,
+    3
+   ],
+   "fds_max": 159.6,
+   "fds_max_each": [
+    94.6,
+    94.8,
+    289.5
+   ],
+   "fds_median": 39.5,
+   "kz_median": 3.83,
+   "kurtosis": 6.37,
+   "mrs_max_ratio": 1.56,
+   "seconds": 1.8
+  },
+  {
+   "case": "multisource",
+   "method": "mmvsd",
+   "seeds": [
+    1,
+    2,
+    3
+   ],
+   "fds_max": 44.3,
+   "fds_max_each": [
+    45.9,
+    46.8,
+    40.2
+   ],
+   "fds_median": 3.8,
+   "kz_median": 0.78,
+   "kurtosis": 5.9,
+   "mrs_max_ratio": 1.4,
+   "seconds": 13.9
+  },
+  {
+   "case": "multisource",
+   "method": "mmvsd pattern",
+   "seeds": [
+    1,
+    2,
+    3
+   ],
+   "fds_max": 28.8,
+   "fds_max_each": [
+    34.9,
+    26.7,
+    24.6
+   ],
+   "fds_median": 2.7,
+   "kz_median": 0.87,
+   "kurtosis": 6.09,
+   "mrs_max_ratio": 1.43,
+   "seconds": 17.9
+  },
+  {
+   "case": "sine-on-random",
+   "method": "gaussian",
+   "seeds": [
+    1,
+    2,
+    3
+   ],
+   "fds_max": 27.6,
+   "fds_max_each": [
+    28.8,
+    29.2,
+    24.7
+   ],
+   "fds_median": 0.5,
+   "kz_median": 0.73,
+   "kurtosis": 3.0,
+   "mrs_max_ratio": 1.24,
+   "seconds": 4.1
+  },
+  {
+   "case": "sine-on-random",
+   "method": "kfds",
+   "seeds": [
+    1,
+    2,
+    3
+   ],
+   "fds_max": 36.7,
+   "fds_max_each": [
+    37.2,
+    30.7,
+    42.1
+   ],
+   "fds_median": 3.6,
+   "kz_median": 1.18,
+   "kurtosis": 4.13,
+   "mrs_max_ratio": 1.54,
+   "seconds": 5.8
+  },
+  {
+   "case": "sine-on-random",
+   "method": "sor",
+   "seeds": [
+    1,
+    2,
+    3
+   ],
+   "fds_max": 27.7,
+   "fds_max_each": [
+    26.6,
+    27.9,
+    28.5
+   ],
+   "fds_median": 0.9,
+   "kz_median": 0.83,
+   "kurtosis": 3.0,
+   "mrs_max_ratio": 1.25,
+   "seconds": 3.8
+  },
+  {
+   "case": "sine-on-random",
+   "method": "mmvsd",
+   "seeds": [
+    1,
+    2,
+    3
+   ],
+   "fds_max": 15.8,
+   "fds_max_each": [
+    15.2,
+    23.0,
+    9.3
+   ],
+   "fds_median": 1.0,
+   "kz_median": 0.09,
+   "kurtosis": 3.89,
+   "mrs_max_ratio": 1.28,
+   "seconds": 11.4
+  }
+ ]
+}

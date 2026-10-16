@@ -1,0 +1,145 @@
+\section{The methods of version 2.0}\label{sec:methods}
+
+All methods of this section are those of the PhD dissertation, written in a common form. The
+FDS-controlled methods (\code{gaussian}, \code{kfds}, \code{rf}, \code{pf}, \code{psf}, \code{sor})
+end with the closed loop of Section~\ref{sec:closedloop}.
+
+\subsection{kFDS: prescribed FDS and kurtosis}\label{sec:kfds}
+
+\emph{Form of the signal.} kFDS multiplies a stationary Gaussian carrier $g$, designed as in
+Section~\ref{sec:inversion}, by a slowly varying envelope $e(t)$,~\eqref{eq:envcarrier}. The envelope
+is piecewise constant over windows of length $L_w$, with linear ramps of $L_w/3$ between the levels, so
+that the waveform has no jumps.
+
+\emph{The damage is kept by the normalisation $\tavg{e^b} = 1$.} If a window is long compared with the
+response time of the oscillators, the response in the window is the carrier's response multiplied by
+$e_w$, its cycles are those of the carrier scaled by $e_w$, and by~\eqref{eq:minerz} the damage in the
+window is $e_w^b$ times the carrier's damage in the window. If the carrier's damage is spread evenly
+over time, summing over the windows gives
+\begin{equation}
+  D(e\,g) = \sum_w e_w^b\,D_{g,w} = \sum_w e_w^b\,\frac{T_w}{T}D_g = \tavg{e^b}\,D_g ,
+\end{equation}
+so any envelope with $\tavg{e^b}=1$ keeps the FDS of the carrier. (In the dissertation the same
+condition appears as weights $v_j$ of blocks, $e_j = (n v_j)^{1/b}$.)
+
+\emph{The kurtosis is set by the contrast of the envelope.} By~\eqref{eq:kmod} the kurtosis of the
+product is $3\tavg{e^4}/\tavg{e^2}^2$. The envelope is $e_w = \exp(\alpha u_w)$ normalised to
+$\tavg{e^b}=1$, where the relative log-levels $u_w\le0$ are drawn
+\begin{itemize}[nosep]
+\item from the distribution of the window RMS of the reference (\code{pattern = "reference"},
+default when a record is available): the logarithm of the RMS of every window of the record is
+computed, and $n_w$ values are drawn from their life-weighted distribution by quantile resampling, in
+random order, so that the test has bursts with the statistics of the field data;
+\item or as random bursts (\code{"bursts"}): 10 to 20\,\% of the windows at a high level.
+\end{itemize}
+$\alpha = 0$ gives a constant envelope (kurtosis 3); the kurtosis grows with $\alpha$. The program
+finds the $\alpha$ that gives the target kurtosis \emph{on the realised signal} $e\,g$ with a
+bracketing root finder (Brent's method). The envelope is frozen after the first two iterations of the
+closed loop, which then corrects only the carrier spectrum.
+
+\emph{Window length.} The normalisation argument requires windows long compared with the response
+time of the slowest oscillator. The amplitude of a free oscillator decays as $e^{-\zeta\wn t}$, with the
+decay time $1/(\zeta\wn) = Q/(\pi\fn) = 2\tau$; the window is at least $2Q/(\pi f_{\min})$. Within this
+bound the default follows the rule of the dissertation: a fraction of the reference duration (1/150 to
+1/400 depending on $f_s$), with at least 300 samples.
+
+\subsection{RF: prescribed FDS and RMS}
+
+RF uses the same envelope with the RMS as the target. With $\tavg{e^b}=1$ the RMS of the product is
+$\sigma_g\tavg{e^2}^{1/2}$. For $b>2$ the power-mean inequality gives $\tavg{e^2}^{1/2}\le
+\tavg{e^b}^{1/b} = 1$, with equality only for a constant envelope; increasing the contrast lowers the
+RMS. RF can therefore only lower the RMS below that of the Gaussian profile with the same FDS; the
+program says so when a higher RMS is requested.
+
+\subsection{PF and PSF: prescribed FDS and PSD}\label{sec:pf}
+
+PF builds the test from two independent stationary Gaussian carriers, a high-energy one $x_B$ (PSD
+$G_B$) for the bursts and a low-energy one $x_L$ (PSD $G_L$) for the rest, combined with a smooth
+switching mask $m(t)\in[0,1]$ that is 1 during the bursts:
+\begin{equation}
+  x(t) = \sqrt{m(t)}\,x_B(t) + \sqrt{1-m(t)}\,x_L(t).
+\end{equation}
+Because the carriers are independent, the local PSD is $mG_B + (1-m)G_L$, and the time-averaged PSD is
+$\tavg{m}G_B + (1-\tavg m)G_L = (t_BG_B + t_LG_L)/T$, with $t_B = \tavg mT$ the total burst time and
+$t_L = T-t_B$. Requiring the reference PSD gives
+\begin{equation}
+  G_L = \frac{T\,G_{\mathrm{ref}} - t_B\,G_B}{t_L}.
+\end{equation}
+The damage is the sum of the damages of the two parts. The burst PSD is found by a fixed point:
+start with $D_L = D_t/20$; design $G_B$ for $D_B = D_t-D_L$ over $t_B$ (Section~\ref{sec:inversion});
+compute $G_L$ from the PSD condition and its Gaussian damage $D_L$ over $t_L$; repeat. The burst time
+starts at $T/20$ and is halved while $G_L$ would be negative over more than 10\,\% of the band, but
+two bursts of at least three decay times of the lowest oscillator are kept when possible. When
+PSD, RMS and FDS cannot all be met (for instance at high acceleration), the program reports it.
+
+PSF prescribes only the shape of the PSD: PF is run with the damage that the reference produces in
+the test duration, $D_t\,T/\Tl$, and the result is multiplied by $(\Tl/T)^{1/b}$, which multiplies
+its damage by $\Tl/T$ and its PSD by $(\Tl/T)^{2/b}$ without changing the shape.
+
+\subsection{Kurtosis control without damage: MLV, VSD, PM}
+
+These methods prescribe the PSD and the kurtosis of the signal, not its damage. MLV
+(multi-level variance) is the modulated Gaussian~\eqref{eq:envcarrier} normalised to $\tavg{e^2}=1$
+(this keeps PSD and RMS) with the contrast solved for the kurtosis. VSD (variable spectral density)
+splits the band into log-spaced sub-bands, each with its own carrier and independent burst envelope,
+so that the shape of the PSD changes with time while its time average is the reference PSD. PM
+(phase manipulation) keeps Gaussian amplitudes and partially aligns the phases of the harmonics in a
+fraction of the blocks, which creates peaks; the degree of alignment is solved for the kurtosis. The
+benchmark of the program shows that, over the same duration, their FDS can differ from the
+reference's by a factor of 3 or more: kurtosis alone does not control the damage.
+
+\subsection{MRS control}
+
+The largest value of a narrow-band Gaussian response in the duration $T$ can be estimated from Rice's
+crossing rate. Repeating the derivation of~\eqref{eq:nu0} for the level $z=u$ instead of 0, the
+joint density at $z=u$ contains the extra factor $e^{-u^2/(2\sigma_z^2)}$, so the rate of up-crossings
+of $u$ is $\nu_0^+e^{-u^2/(2\sigma_z^2)}$. The level crossed on average once in $T$ satisfies
+$\nu_0^+Te^{-u^2/(2\sigma_z^2)} = 1$, i.e.
+\begin{equation}
+  u = \sigma_z\sqrt{2\ln(\nu_0^+T)} \approx \sigma_z\sqrt{2\ln(\fn T)} ,
+  \qquad \mathrm{MRS}_G(\fn) = \wn^2\sigma_z\sqrt{2\ln(\fn T)} .
+\end{equation}
+A target MRS therefore prescribes $\sigma_z$ at every node, the PSD follows from~\eqref{eq:WG}, and
+the closed loop corrects the measured MRS with the exponent 1 instead of $1/b$ in~\eqref{eq:gain}
+(the MRS is proportional to the amplitude).
+
+\subsection{Sine on random}\label{sec:sor2}
+
+Rotating machines add tonal lines to the random vibration. The method \code{sor} detects the lines
+in the reference PSD: a peak standing more than a prominence threshold (10\,dB by default) above a
+running median of the PSD is a line, and its amplitude follows from the power in the peak,
+$A = \sqrt{2P}$ (a sine of amplitude $A$ has the power $A^2/2$). A stationary sine of amplitude $A$
+produces in an oscillator a sinusoidal response of amplitude $|H|A$ at the line frequency, i.e.\
+the damage $\frac{K^b}{C}f_0 T(|H|A)^b$ in the time $T$. To keep the damage of the life $\Tl$ in the
+test duration $T$, the test amplitude $A_T$ must satisfy $A_T^bT = A^b\Tl$:
+\begin{equation}\label{eq:sorgain}
+  A_T = A\left(\frac{\Tl}{T}\right)^{1/b}.
+\end{equation}
+The random part is designed for the remaining damage and corrected in closed loop with the lines kept
+fixed; nodes where the lines alone exceed the target are reported and left out of the loop criterion.
+Version~2.1 adds the detection of lines that are present only in some blocks of a record
+(Section~\ref{sec:lines}).
+
+\subsection{Missions}\label{sec:missions}
+
+A mission is a tree whose leaves are situations (a record or a specification with the life it
+represents) and whose inner nodes are groups. In a \emph{series} group the component lives through
+all children one after the other: the FDS are added, the lives are added, the PSD is the
+life-weighted mean, the MRS is the maximum. In a \emph{parallel} group it lives through only one of
+them, not known in advance: the FDS and PSD are enveloped (maximum over the children) and the life,
+RMS and kurtosis are those of the most damaging child.
+
+The statistics of a series group follow from the moments of a mixture. If a fraction $w_c$ of the
+life is spent in situation $c$, where the signal has the moments $\mu_{2,c}$ and $\mu_{4,c}$, the
+moments over the whole life are the weighted averages $\mu_2 = \sum_cw_c\mu_{2,c}$ and $\mu_4 =
+\sum_cw_c\mu_{4,c}$, and the kurtosis is $\mu_4/\mu_2^2$. Version~2.1 applies the same rule to the
+response of every oscillator: with $v_c(\fn)$ and $\kappa_c(\fn)$ the variance and kurtosis of the
+response in situation $c$, $\mu_{4,c} = \kappa_cv_c^2$ and
+\begin{result}[Response kurtosis of a series mission]
+\begin{equation}\label{eq:kzmix}
+  v(\fn) = \sum_c w_c v_c(\fn),\qquad
+  \kappa_z(\fn) = \frac{\sum_c w_c\,\kappa_c(\fn)\,v_c(\fn)^2}{v(\fn)^2}.
+\end{equation}
+\end{result}
+A PSD specification has $\kappa_c = 3$ (it describes a Gaussian process); a swept sine is measured on
+its generated signal.

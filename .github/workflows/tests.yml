@@ -27,3 +27,5 @@ jobs:
         run: python -m pytest -q tests
       - name: Command line smoke test
         run: python -m vibsynth analyze examples/example_road.mat --fmin 5 --fmax 200 --Q 20 --b 7
+      - name: MMVSD smoke test
+        run: python -m vibsynth synth examples/example_road.mat --fmin 5 --fmax 100 --method mmvsd --duration 20 --iterations 5 --seed 1 --out mmvsd_smoke.mat

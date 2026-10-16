@@ -1,0 +1,144 @@
+\part*{Part I --- Signals, oscillators and damage}
+\addcontentsline{toc}{part}{Part I --- Signals, oscillators and damage}
+
+\section{Random signals}\label{sec:signals}
+
+\subsection{Statistics of a signal}
+
+Let $x_1,\dots,x_N$ be the samples of a signal. Its \emph{mean} and its \emph{central moments} of
+order $m$ are
+\begin{equation}
+  \bar x = \frac1N\sum_{k=1}^N x_k, \qquad \mu_m = \frac1N\sum_{k=1}^N (x_k-\bar x)^m .
+\end{equation}
+The \emph{variance} is $\sigma^2 = \mu_2$, the standard deviation is $\sigma=\sqrt{\mu_2}$, and for a
+zero-mean signal $\sigma$ is the root mean square (RMS) value. The \emph{skewness} $\mu_3/\sigma^3$ is
+zero for a signal whose values are distributed symmetrically about the mean. The \emph{kurtosis}
+(Pearson's definition, used everywhere in this manual and in the program) is
+\begin{equation}\label{eq:kurtosis}
+  \kappa = \frac{\mu_4}{\mu_2^{2}} .
+\end{equation}
+It measures the weight of the tails of the distribution of the values: rare large values raise
+$\mu_4$ much more than $\mu_2$. The \emph{crest factor} is $\max_k|x_k-\bar x|/\sigma$.
+
+The same definitions apply to a random variable $X$ when the averages over the samples are replaced
+by expectations: $\mu_m = \E[(X-\E X)^m]$.
+
+\subsection{The Gaussian distribution and its kurtosis}\label{sec:gausskurt}
+
+A zero-mean Gaussian random variable $X$ with variance $\sigma^2$ has the probability density
+\begin{equation}
+  p(x) = \frac{1}{\sqrt{2\pi}\,\sigma}\, e^{-x^2/(2\sigma^2)} .
+\end{equation}
+Its even moments follow from one integration by parts. For an integer $m\ge 0$, write
+$x^{m+2}e^{-x^2/(2\sigma^2)} = x^{m+1}\cdot\bigl(x\,e^{-x^2/(2\sigma^2)}\bigr)$ and note that
+$x\,e^{-x^2/(2\sigma^2)}$ is the derivative of $-\sigma^2 e^{-x^2/(2\sigma^2)}$. Then
+\begin{align}
+  \E[X^{m+2}] &= \frac{1}{\sqrt{2\pi}\sigma}\int_{-\infty}^{\infty} x^{m+1}\, x\, e^{-x^2/(2\sigma^2)}\,\dd x
+  \nonumber\\
+  &= \frac{1}{\sqrt{2\pi}\sigma}\Bigl[-\sigma^2 x^{m+1} e^{-x^2/(2\sigma^2)}\Bigr]_{-\infty}^{\infty}
+   + \frac{1}{\sqrt{2\pi}\sigma}\int_{-\infty}^{\infty} (m+1)x^{m}\,\sigma^2 e^{-x^2/(2\sigma^2)}\,\dd x
+  \nonumber\\
+  &= 0 + (m+1)\,\sigma^2\,\E[X^m] .
+\end{align}
+The bracket vanishes because the exponential decays faster than any power grows. Starting from
+$\E[X^0]=1$: $\E[X^2] = 1\cdot\sigma^2\cdot 1 = \sigma^2$ and $\E[X^4] = 3\sigma^2\E[X^2] = 3\sigma^4$.
+Therefore
+\begin{result}[Kurtosis of a Gaussian variable]
+\begin{equation}\label{eq:gauss4}
+  \E[X^4] = 3\sigma^4, \qquad \kappa = \frac{3\sigma^4}{(\sigma^2)^2} = 3 .
+\end{equation}
+\end{result}
+A signal with $\kappa>3$ is called \emph{leptokurtic}: it has more large values than a Gaussian
+signal with the same RMS. Measured road and transport vibration is typically leptokurtic, with
+$\kappa$ between 4 and 8, because its level changes with the road surface and contains shocks.
+
+\subsection{Power spectral density}\label{sec:psd}
+
+A record of duration $T$ sampled at $f_s$ can be written exactly as a finite Fourier series. With
+$\Delta f = 1/T$ and the frequencies $f_m = m\,\Delta f$, $m = 0,1,\dots,N/2$,
+\begin{equation}\label{eq:fourier}
+  x(t_k) = \bar x + \sum_{m=1}^{N/2} A_m \cos(2\pi f_m t_k + \varphi_m),\qquad t_k = k\Delta t ,
+\end{equation}
+where $A_m\ge0$ is the amplitude and $\varphi_m$ the phase of the line $f_m$. A cosine of amplitude
+$A_m$ has mean square value $A_m^2/2$ over a whole number of periods (because $\cos^2\theta =
+\tfrac12 + \tfrac12\cos2\theta$ and the second term averages to zero), and two lines of different
+frequencies are orthogonal over the record (the average of their product is zero). The variance of
+the record is therefore the sum of the powers of its lines,
+\begin{equation}\label{eq:parseval}
+  \sigma^2 = \sum_{m} \frac{A_m^2}{2}.
+\end{equation}
+The \emph{one-sided power spectral density} (PSD) distributes this power over frequency: the power of
+the line $f_m$ is spread over the band $\Delta f$ that the line represents,
+\begin{equation}\label{eq:psddef}
+  G(f_m) = \frac{A_m^2}{2\,\Delta f}, \qquad \sigma^2 = \sum_m G(f_m)\,\Delta f \;\approx\; \int_0^{f_s/2} G(f)\,\dd f .
+\end{equation}
+The unit of $G$ is (m/s$^2$)$^2$/Hz. For a random process the PSD is the expectation of this quantity
+when $T\to\infty$; for a single record it must be \emph{estimated}, because the amplitudes of
+individual lines scatter strongly from one record to another. The program uses Welch's estimate:
+the record is cut into segments of length $1/r$ ($r$ is the requested resolution in Hz) overlapping
+by 50\,\%, each segment is multiplied by a Hamming window (a raised-cosine taper that reduces the
+leakage of power between lines), the squared moduli of their Fourier
+transforms are scaled as in~\eqref{eq:psddef} and averaged. Averaging many segments reduces the
+scatter; this is the only property of the estimate that the manual uses.
+
+\subsection{Gaussian signals with a prescribed PSD}\label{sec:multisine}
+
+Equation~\eqref{eq:fourier} also tells how to \emph{build} a signal with a prescribed PSD $G(f)$:
+choose the amplitudes
+\begin{equation}\label{eq:amplitudes}
+  A_m = \sqrt{2\,G(f_m)\,\Delta f}
+\end{equation}
+and phases $\varphi_m$ drawn independently and uniformly in $[0,2\pi)$. This is a
+\emph{random-phase multisine}. Its variance is $\sum_m A_m^2/2 = \sum_m G(f_m)\Delta f$, exactly the
+area under the prescribed PSD, for every choice of the phases. The value $x(t)$ at a given time is a
+sum of many independent terms $A_m\cos(2\pi f_m t+\varphi_m)$, each with zero mean and bounded; by the
+central limit theorem the distribution of such a sum approaches a Gaussian distribution when many
+lines carry comparable power. In practice a test of 60\,s has a line spacing of 1/60\,Hz, and
+hundreds of lines fall in any band of interest, so the multisine is Gaussian for all purposes.
+
+A second construction is exactly Gaussian for any number of lines. Write each line as
+$A_m\cos(2\pi f_m t+\varphi_m) = U_m\cos(2\pi f_m t) - V_m\sin(2\pi f_m t)$ with $U_m =
+A_m\cos\varphi_m$ and $V_m = A_m\sin\varphi_m$ (this is the addition formula of the cosine). If $U_m$
+and $V_m$ are drawn as independent zero-mean Gaussian variables with variance $G(f_m)\Delta f$, then
+$x(t)$ is, at every $t$, a sum of Gaussian variables with fixed coefficients, hence Gaussian, with
+variance $\sum_m G(f_m)\Delta f\,(\cos^2+\sin^2) = \sum_m G(f_m)\Delta f$. The amplitude $A_m =
+\sqrt{U_m^2+V_m^2}$ is then random instead of fixed: it is the length of a vector with two independent
+Gaussian components, whose distribution (the Rayleigh distribution) is derived in
+Section~\ref{sec:rayleigh},
+with $\E[A_m^2/2] = G(f_m)\Delta f$. The pair $(U_m, V_m)$, written as the complex number $U_m+\ii V_m$,
+is a \emph{complex normal coefficient}; the program draws such coefficients with unit mean square
+modulus and scales them to the power of each line.
+
+Keeping the phases (or the coefficients) of a realisation fixed while changing the amplitudes
+$A_m$ is called \emph{frozen phases}: the signal then changes smoothly with its PSD, which is what
+the closed-loop corrections of Section~\ref{sec:closedloop} rely on.
+
+\subsection{Modulated Gaussian signals}\label{sec:modulated}
+
+A leptokurtic signal can be built by multiplying a stationary Gaussian \emph{carrier} $g(t)$ (zero
+mean, variance $\sigma_g^2$) by a positive \emph{envelope} $e(t)$ that varies slowly compared with the
+carrier:
+\begin{equation}\label{eq:envcarrier}
+  x(t) = e(t)\,g(t).
+\end{equation}
+Divide the duration $T$ into windows short enough for $e$ to be practically constant in each
+(window $w$ has duration $T_w$ and envelope value $e_w$) but long enough to contain many periods of
+the carrier, so that the time average of $g^2$ and $g^4$ over a window equals its expectation.
+Using~\eqref{eq:gauss4} for the carrier,
+\begin{align}
+  \tavg{x^2} &= \sum_w \frac{T_w}{T}\, e_w^2\, \sigma_g^2 = \sigma_g^2\,\tavg{e^2}, \\
+  \tavg{x^4} &= \sum_w \frac{T_w}{T}\, e_w^4\, 3\sigma_g^4 = 3\sigma_g^4\,\tavg{e^4},
+\end{align}
+and the kurtosis~\eqref{eq:kurtosis} of the product is
+\begin{result}[Kurtosis of a modulated Gaussian signal]
+\begin{equation}\label{eq:kmod}
+  \kappa = \frac{3\sigma_g^4\tavg{e^4}}{\bigl(\sigma_g^2\tavg{e^2}\bigr)^2} = 3\,\frac{\tavg{e^4}}{\tavg{e^2}^2}
+  = 3\,\frac{\tavg{s^2}}{\tavg{s}^2}, \qquad s(t) = e(t)^2\sigma_g^2 .
+\end{equation}
+\end{result}
+The quantity $s(t)$ is the \emph{local variance} of the signal. The last form of~\eqref{eq:kmod}
+states a general rule used throughout Part~III: if, given a slowly varying local variance $s(t)$,
+the signal is Gaussian, its kurtosis is three times the ratio of the mean square of $s$ to the square
+of its mean. By the Cauchy--Schwarz inequality, $\tavg{s}^2 \le \tavg{s^2}\tavg{1}$, so
+$\kappa\ge3$, with equality only for a constant $s$. Modulation can raise the kurtosis but never lower
+it below the Gaussian value.

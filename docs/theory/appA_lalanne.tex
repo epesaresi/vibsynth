@@ -1,0 +1,125 @@
+\section{Lalanne's operator in closed form}\label{app:lalanne}
+
+This appendix integrates~\eqref{eq:W}: the response variance of an oscillator to a PSD that is
+linear between nodes.
+
+\subsection*{A.1 Dimensionless form}
+
+Fix the oscillator of natural frequency $\fn$ and write every frequency relative to it, $h = f/\fn$.
+Then $\omega = h\wn$, and~\eqref{eq:H2} becomes
+\begin{equation}
+  |H|^2 = \frac{1}{(\wn^2-h^2\wn^2)^2 + (2\zeta\wn\cdot h\wn)^2} = \frac{1}{\wn^4\,\Delta(h)},
+  \qquad \Delta(h) = (1-h^2)^2 + (2\zeta h)^2 .
+\end{equation}
+With $\dd f = \fn\,\dd h$, the variance is
+\begin{equation}\label{eq:A1}
+  \sigma_z^2 = \int|H|^2G\,\dd f = \frac{\fn}{\wn^4}\int\frac{G(\fn h)}{\Delta(h)}\,\dd h .
+\end{equation}
+
+\subsection*{A.2 Factorisation of $\Delta$}
+
+Expanding, $\Delta(h) = 1 - 2h^2 + h^4 + 4\zeta^2h^2 = (h^2+1)^2 - (4-4\zeta^2)h^2$. With
+\begin{equation}
+  a = 2\sqrt{1-\zeta^2}\qquad (a^2 = 4-4\zeta^2),
+\end{equation}
+this is a difference of squares, $\Delta = (h^2+1)^2-(ah)^2$:
+\begin{equation}
+  \Delta(h) = (h^2+ah+1)(h^2-ah+1).
+\end{equation}
+Both factors are positive: $h^2\pm ah+1 = (h\pm a/2)^2 + 1 - a^2/4$ and $1-a^2/4 = 1-(1-\zeta^2) =
+\zeta^2$, so
+\begin{equation}\label{eq:A2}
+  h^2\pm ah+1 = \Bigl(h\pm\frac a2\Bigr)^2 + \zeta^2 .
+\end{equation}
+
+\subsection*{A.3 Partial fractions}
+
+Since $h\to-h$ exchanges the two factors, look for
+\begin{equation}
+  \frac{1}{\Delta} = \frac{\alpha h+\beta}{h^2+ah+1} + \frac{-\alpha h+\beta}{h^2-ah+1}.
+\end{equation}
+Over the common denominator the numerator is
+$(\alpha h+\beta)(h^2-ah+1) + (-\alpha h+\beta)(h^2+ah+1)$. Expanding both products,
+$\alpha h^3 - a\alpha h^2 + \alpha h + \beta h^2 - a\beta h + \beta$ and
+$-\alpha h^3 - a\alpha h^2 - \alpha h + \beta h^2 + a\beta h + \beta$; their sum is
+$(2\beta - 2a\alpha)h^2 + 2\beta$. It must equal 1 for all $h$: $2\beta = 1$ and $2\beta = 2a\alpha$,
+so $\beta = \tfrac12$ and $\alpha = \tfrac{1}{2a}$:
+\begin{equation}
+  \frac{1}{\Delta} = \frac{\frac{h}{2a}+\frac12}{h^2+ah+1} + \frac{-\frac{h}{2a}+\frac12}{h^2-ah+1}.
+\end{equation}
+
+\subsection*{A.4 The two basic integrals}
+
+\emph{First integral.} In the first fraction write the numerator as a multiple of the derivative of
+the denominator plus a constant: $\frac{h}{2a}+\frac12 = \frac{2h+a}{4a} + \frac14$ (indeed
+$\frac{2h}{4a}+\frac{a}{4a}+\frac14 = \frac{h}{2a}+\frac12$). The derivative of $h^2+ah+1$ is $2h+a$,
+and by~\eqref{eq:A2}
+\begin{equation}
+  \int\frac{\dd h}{h^2+ah+1} = \int\frac{\dd h}{(h+\frac a2)^2+\zeta^2} = \frac1\zeta\arctan\frac{h+\frac a2}{\zeta}
+  = \frac1\zeta\arctan\frac{2h+a}{2\zeta}.
+\end{equation}
+Hence $\int\frac{\frac{h}{2a}+\frac12}{h^2+ah+1}\dd h = \frac{1}{4a}\ln(h^2+ah+1) +
+\frac{1}{4\zeta}\arctan\frac{2h+a}{2\zeta}$. The second fraction is treated in the same way with
+$-\frac{h}{2a}+\frac12 = -\frac{2h-a}{4a}+\frac14$, giving $-\frac{1}{4a}\ln(h^2-ah+1) +
+\frac{1}{4\zeta}\arctan\frac{2h-a}{2\zeta}$. Adding,
+\begin{equation}\label{eq:A3}
+  \int\frac{\dd h}{\Delta} = \frac{1}{4a}\ln\frac{h^2+ah+1}{h^2-ah+1}
+  + \frac{1}{4\zeta}\left[\arctan\frac{2h+a}{2\zeta}+\arctan\frac{2h-a}{2\zeta}\right].
+\end{equation}
+
+\emph{Second integral.} Substitute $v = h^2$, $\dd v = 2h\,\dd h$:
+\begin{equation}
+  \int\frac{h\,\dd h}{\Delta} = \frac12\int\frac{\dd v}{(1-v)^2+4\zeta^2v} = \frac12\int\frac{\dd v}{v^2+(4\zeta^2-2)v+1}.
+\end{equation}
+Complete the square: $(v+2\zeta^2-1)^2 = v^2 + (4\zeta^2-2)v + (2\zeta^2-1)^2$, and
+$1-(2\zeta^2-1)^2 = 1 - 4\zeta^4 + 4\zeta^2 - 1 = 4\zeta^2(1-\zeta^2) = \zeta^2a^2$, so the denominator
+is $(v+2\zeta^2-1)^2 + \zeta^2a^2$ and
+\begin{equation}\label{eq:A4}
+  \int\frac{h\,\dd h}{\Delta} = \frac{1}{2\zeta a}\arctan\frac{h^2+2\zeta^2-1}{\zeta a}.
+\end{equation}
+Both antiderivatives are continuous in $h$. It is convenient to normalise them by $4\zeta/\pi$:
+\begin{align}
+  I_0(h) &= \frac{4\zeta}{\pi}\int\frac{\dd h}{\Delta}
+  = \frac{\zeta}{\pi a}\ln\frac{h^2+ah+1}{h^2-ah+1} + \frac1\pi\left[\arctan\frac{2h+a}{2\zeta}+\arctan\frac{2h-a}{2\zeta}\right],\\
+  I_1(h) &= \frac{4\zeta}{\pi}\int\frac{h\,\dd h}{\Delta} = \frac{2}{\pi a}\arctan\frac{h^2+2\zeta^2-1}{\zeta a}.
+\end{align}
+(The program writes $I_1$ as $\frac{2}{\pi a}[\arctan\frac{2h-a}{2\zeta}-\arctan\frac{2h+a}{2\zeta}]$,
+which has the same derivative and therefore differs only by a constant, irrelevant in definite
+integrals.)
+
+\emph{White noise.} At $h=0$: $\ln1 = 0$ and $\arctan\frac{a}{2\zeta}+\arctan\frac{-a}{2\zeta} = 0$,
+so $I_0(0) = 0$. For $h\to\infty$ the logarithm tends to $\ln1=0$ and each arctangent to $\pi/2$, so
+$I_0(\infty) = 1$. Therefore $\int_0^\infty\dd h/\Delta = \pi/(4\zeta)$, and by~\eqref{eq:A1} with
+$G = G_0$
+\begin{equation}
+  \int_0^\infty|H|^2\dd f = \frac{\fn}{\wn^4}\,\frac{\pi}{4\zeta} = \frac{\wn}{2\pi}\cdot\frac{\pi}{4\zeta\wn^4}
+  = \frac{1}{8\zeta\wn^3},
+\end{equation}
+the result used in~\eqref{eq:miles}.
+
+\subsection*{A.5 A PSD linear between nodes}
+
+Let the nodes, in units of the oscillator's natural frequency, be $h_l = f_{\mathrm{n},l}/\fn$. On the
+segment $[h_l, h_{l+1}]$ of width $\delta_l = h_{l+1}-h_l$ the PSD is
+\begin{equation}
+  G = G_l\,\frac{h_{l+1}-h}{\delta_l} + G_{l+1}\,\frac{h-h_l}{\delta_l}.
+\end{equation}
+With the increments $\Delta I_{0,l} = I_0(h_{l+1})-I_0(h_l)$ and $\Delta I_{1,l} = I_1(h_{l+1})-I_1(h_l)$,
+\begin{equation}
+  \frac{4\zeta}{\pi}\int_{h_l}^{h_{l+1}}\frac{G}{\Delta}\dd h
+  = G_l\,\frac{h_{l+1}\Delta I_{0,l}-\Delta I_{1,l}}{\delta_l} + G_{l+1}\,\frac{\Delta I_{1,l}-h_l\Delta I_{0,l}}{\delta_l}.
+\end{equation}
+The node $j$ appears as the right end of segment $j-1$ and as the left end of segment $j$. Collecting
+its two coefficients and multiplying by $\frac{\fn}{\wn^4}\frac{\pi}{4\zeta} = \frac{1}{8\zeta\wn^3}$
+(from~\eqref{eq:A1}),
+\begin{result}[Lalanne's operator]
+\begin{equation}
+  W_{ij} = \frac{1}{8\zeta\wn^3}\left[\frac{\Delta I_{1,j-1}-h_{j-1}\Delta I_{0,j-1}}{\delta_{j-1}}
+  + \frac{h_{j+1}\Delta I_{0,j}-\Delta I_{1,j}}{\delta_j}\right],
+\end{equation}
+\end{result}
+where $\wn$, $h$ and the increments refer to the oscillator $i$, and the first (second) term is absent
+for the first (last) node. The program evaluates this for all pairs $(i,j)$ at once. The moment
+operators of MMVSD (Section~\ref{sec:operators}) include the shape prior, the digital response and the
+edge extension, which have no closed form; they are integrated numerically, and with $\Pi = 1$ and the
+analogue response they reproduce this matrix to better than $10^{-3}$ (checked in the tests).

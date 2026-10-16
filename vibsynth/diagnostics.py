@@ -5,8 +5,7 @@ import numpy as np
 from scipy import signal as sps
 from scipy.special import gamma
 
-from .fds import apply_prefilter, sdof_relative_displacement, FDSParams, fds_time
-from .signals import kurtosis
+from .fds import apply_prefilter, sdof_relative_displacement, FDSParams, fds_time, response_spectra
 
 __all__ = ["spectrogram", "pdf", "running_stats", "sdof_response", "response_stats",
            "spectral_kurtosis", "kurtogram", "shaker_check", "match_pdf", "fds_sensitivity",
@@ -77,16 +76,13 @@ def sdof_response(x, fs, fn, Q, quantity="pseudo-acceleration", prefilter=False)
     return z if quantity.startswith("disp") else z * (2 * np.pi * fn) ** 2
 
 
-def response_stats(x, fs, fn, Q, prefilter="auto"):
+def response_stats(x, fs, fn, Q, prefilter="auto", progress=None):
     """Kurtosis and std of the pseudo-acceleration response versus fn
-    (kurtosis and variance of response versus natural frequency)."""
-    y = apply_prefilter(x, fs, fn, prefilter)
-    k, s = np.empty(fn.size), np.empty(fn.size)
-    for i, f in enumerate(fn):
-        z = sdof_relative_displacement(y, fs, f, Q) * (2 * np.pi * f) ** 2
-        k[i] = kurtosis(z)
-        s[i] = z.std()
-    return k, s
+    (kurtosis and variance of response versus natural frequency).
+    One parallel pass of the oscillator bank (fds.response_spectra)."""
+    fn = np.asarray(fn, float)
+    r = response_spectra(x, fs, FDSParams(fn, Q=Q, prefilter=prefilter), progress=progress)
+    return r["kurtosis"], np.sqrt(np.maximum(r["var"], 0.0)) * (2 * np.pi * fn) ** 2
 
 
 def spectral_kurtosis(x, fs, nfft=None):
