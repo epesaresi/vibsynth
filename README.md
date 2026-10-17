@@ -397,11 +397,12 @@ introduced the methods and, for the software itself, the archived release
 > of Bologna, 2021. https://amsdottorato.unibo.it/id/eprint/9647/
 
 > E. Pesaresi, *vibsynth: mission synthesis and kurtosis control for
-> accelerated vibration testing*, version 2.1.0, Zenodo, 2026.
-> https://doi.org/10.5281/zenodo.23424452
+> accelerated vibration testing*, version 2.2.0, Zenodo, 2026.
+> https://doi.org/10.5281/zenodo.23437944
 
 The DOI https://doi.org/10.5281/zenodo.23298864 covers all versions and always
-resolves to the latest one; version 2.0.0 is https://doi.org/10.5281/zenodo.23298865.
+resolves to the latest one; version 2.0.0 is https://doi.org/10.5281/zenodo.23298865
+and version 2.1.0 is https://doi.org/10.5281/zenodo.23424452.
 
 ## Acknowledgements
 
