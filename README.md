@@ -28,36 +28,36 @@ definition of a PSD to the Jacobians of MMVSD and the compression limit).
 
 ## What is new in 2.2
 
-* **The compression limit.** The damage of an oscillator is the b-th moment of
-  the histogram of its rainflow cycles, so a test that is right for *every*
-  exponent b must keep the large cycles and may only drop the small ones; the
-  only way to do that on a time history is to drop the quiet stretches of the
-  record. How far this goes is the **damage Lorenz curve**: the share of the
-  damage carried by the most damaging fraction of the time, per oscillator. The
-  compression at which the worst oscillator still keeps 90 % of its damage is
-  the limit; beyond it any method, including `edit`, relies on amplitude, and
-  the test depends on the exponent. The analysis tab computes the curve and
-  the limit for any record (`analyze --compressibility` on the command line),
-  with a closed form for a lognormal envelope as a reference.
-* **`edit`**: keeps the most damaging stretches of the target record (each with
-  the ring-down of the slowest oscillator), joins them with cross-fades, and,
-  beyond the limit, raises only the bands that lost damage with a
-  frequency-dependent gain until every oscillator is back on the target FDS.
-  No synthesis: the waveform, the spectrum and the sequence of peaks are those
-  of the record. The result view shows the Lorenz curve, the limit, the kept
-  stretches and the gain per oscillator; the sensitivity card shows directly
-  how the test behaves at other exponents.
-* **Compressed kurtosis target** (option for kFDS, RF, MLV, VSD, PM): the
-  kurtosis of the record edited to the test duration instead of the kurtosis of
-  the whole record. A test that must carry the damage of the record in a
-  quarter of the time *and* keep the record's kurtosis is forced to a heavier
-  tail than the record has; the compressed target removes that bias where the
-  record's kurtosis comes from smooth modulation.
-* Theory manual, Part IV: the Lorenz curve and the limit (with the lognormal
-  closed form), the edit method, the kurtosis under compression, and the
-  non-stationarity matrix behind the response kurtosis spectrum, derived step
-  by step. `tools/compression_benchmark.py` reproduces the tables.
-* 13 new tests. The methods and profiles of versions 2.0 and 2.1 are unchanged.
+* **How far can a record be shortened?** A shorter test cannot keep every
+  cycle of the record; it can only drop the small ones and keep the large
+  ones, because the large cycles carry the damage at every S-N exponent. On a
+  time history this means dropping the quiet stretches. The **damage Lorenz
+  curve** shows how much quiet time there is: for each oscillator, the share of
+  the damage carried by the most damaging fraction of the time. The limit is
+  the compression at which the worst oscillator still keeps 90 % of its
+  damage. Below it a test can be right for every exponent; beyond it every
+  method has to raise the amplitude, and the test depends on the exponent. The
+  analysis tab computes the curve and the limit for any record
+  (`analyze --compressibility` on the command line).
+* **New method `edit`.** Keeps the most damaging stretches of the record,
+  joins them with cross-fades, and only beyond the limit raises the bands that
+  lost damage, with a frequency-dependent gain, until every oscillator is back
+  on the target FDS. Nothing is synthesised: waveform, spectrum and sequence of
+  peaks are those of the record. The result view shows the Lorenz curve, the
+  limit, the kept stretches and the gain per oscillator; the sensitivity card
+  shows how the test behaves at other exponents.
+* **Compressed kurtosis target** (option for kFDS, RF, MLV, VSD, PM). A test
+  that carries the damage of the record in a quarter of the time *and* keeps the
+  kurtosis of the whole record gets a heavier tail than the record has. The
+  option uses instead the kurtosis of the record edited to the test duration,
+  which is the kurtosis of the part of the record that matters.
+* **Theory manual, Part IV**: the Lorenz curve and the limit (with a closed
+  form for a lognormal envelope), the edit method, the kurtosis under
+  compression, and the non-stationarity matrix behind the response kurtosis
+  spectrum, all derived step by step. `tools/compression_benchmark.py`
+  reproduces the tables.
+* 13 new tests. The methods and profiles of versions 2.0 and 2.1 are
+  unchanged.
 
 ## What is new in 2.1
 
