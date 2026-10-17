@@ -27,6 +27,8 @@ Kurtosis of the responses different in different bands; lines in some blocks onl
 right time & \code{mmvsd} \\
 Peak severity (shock-like environments) & \code{mrs} \\
 Kurtosis control without damage equivalence & \code{mlv}, \code{vsd}, \code{pm} \\
+The S--N exponent is uncertain, the test must be right for every $b$; a record is available and the
+compression is modest (Section~\ref{sec:limit}) & \code{edit} \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -63,6 +65,38 @@ For a mission or a specification there is no single record: the target $\kappa_z
 of Section~\ref{sec:missions}, the burst statistics are estimated on the longest situation, and only
 the random field is available. Lines are detected on single records only.
 
+\subsection{Edit settings}
+
+\begin{center}
+\begin{tabular}{p{0.24\textwidth}p{0.20\textwidth}p{0.46\textwidth}}
+\toprule
+Interface & Command line & Meaning \\
+\midrule
+Window & \code{--window} & window length $L_w$ of Section~\ref{sec:editwindows} (default: 2\,s or three
+amplitude decay times of the slowest oscillator) \\
+Window ranking & \code{--ranking} & \code{common} (sum of the damage shares) or \code{fair} (max--min
+over the oscillators), Section~\ref{sec:ranking} \\
+Ring-down margin & \code{--margin} & extension of every kept window, in amplitude decay times
+$Q/(\pi f_{\min})$ (default 2) \\
+Cross-fade & \code{--fade} & raised-cosine fade between kept stretches [s] (default 0.1) \\
+Spectral gain & \code{--no-gain} & off: editing only, the FDS stays below the target beyond the limit;
+on (default): Section~\ref{sec:gain} \\
+Gain cap & \code{--gain-max} & clip of the gain and of its inverse (default 2) \\
+Retention for the limit & \code{--retention} & share $\rho$ of~\eqref{eq:alphamax} that defines the
+reported compression limit (default 0.9) \\
+Max.\ corrections, tolerance & \code{--iterations}, \code{--tol} & budget and stopping tolerance of
+the gain loop \\
+Compressed kurtosis target & \code{--compress-}\newline\code{kurtosis} & for kFDS, RF, MLV, VSD, PM: the kurtosis of
+the record edited to the test duration replaces the record's kurtosis as target
+(Section~\ref{sec:compressedk}) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\code{edit} needs a record (or a result) as target; a mission or a specification has no time history
+to edit. The analysis tab computes the Lorenz curve and the compression limits of a record without
+building a test (``Compression limit''), and the command line with \code{analyze --compressibility}.
+
 \subsection{Reading the results}
 
 \begin{itemize}
@@ -78,10 +112,17 @@ against the strength of the component.
 \item \emph{PSD deviation}: the RMS, over the band, of the ratio in dB between the PSD of the profile and
 that of the target.
 \item \emph{Pattern correlation} (pattern mode): Section~\ref{sec:pattern}.
+\item \emph{Compression limit and spectral gain} (\code{edit}): the requested compression against the
+limit~\eqref{eq:alphamax}, the Lorenz curves of the record (mean and worst oscillator, with the lognormal
+closed form and the diagonal of a stationary signal), the stretches kept, and the gain applied at every
+node. A gain of 1 everywhere means that editing alone met the target and the test is right for every
+exponent; a gain above 1 in a band means that the amplitude did the work there and the test depends
+on $b$ in that band (Section~\ref{sec:gain}). The sensitivity card (next section) shows the
+dependence directly.
 \item \emph{Warnings}: a level drifted far from the design over a band, a kurtosis target that cannot
 be reached with the maximum depth, bursts shorter than two response times (filtered by the oscillators,
 Section~\ref{sec:papoulis}), lines that exceed the target damage alone or that are not in the mapped
-part of the record.
+part of the record; for \code{edit}, a compression beyond the limit and a gain that reached its cap.
 \end{itemize}
 
 \subsection{Limits}
@@ -93,4 +134,6 @@ with the same $\kappa_z$ can still differ in their largest peaks, which the MRS 
 model of Section~\ref{sec:mmvsdmodel} assumes that the modulation varies slowly along frequency compared
 with the oscillator bandwidth; very narrow bursts in frequency are smoothed. Finally, a test that is
 much shorter than the life compresses the bursts: their duration is kept in the \code{blocks} mapping,
-at the price of leaving out parts of the record.
+at the price of leaving out parts of the record. Part~IV makes this last point quantitative: the Lorenz
+curve of the record says how much can be left out before the amplitude has to rise, and with it the
+dependence on the exponent.

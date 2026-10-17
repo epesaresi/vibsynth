@@ -2,10 +2,10 @@ cff-version: 1.2.0
 message: "If you use this software, please cite it, and the dissertation that introduced the methods."
 title: "vibsynth: mission synthesis and kurtosis control for accelerated vibration testing"
 type: software
-version: 2.1.0
+version: 2.2.0
 doi: 10.5281/zenodo.23424452
 repository-code: "https://github.com/epesaresi/vibsynth"
-date-released: 2026-10-16
+date-released: 2026-10-17
 license: MIT
 authors:
   - family-names: Pesaresi

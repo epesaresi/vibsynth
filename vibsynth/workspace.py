@@ -300,7 +300,7 @@ class Workspace:
                                       "fds_target_scale", "predicted_kurtosis", "lambda", "k_response",
                                       "k_target", "k_model", "excess", "modulation", "modulation_hop_s",
                                       "frames", "freq_corr_oct", "time_corr_s", "pattern_mapping",
-                                      "tf_corr", "lines")}
+                                      "tf_corr", "lines", "edit")}
         it.meta["envelope"] = res.envelope
         it.meta["design"] = {"fn": res.design_fn, "psd": res.design_psd}
         it.meta["eval"] = ev
@@ -326,6 +326,20 @@ class Workspace:
         if ref_id in self.missions:
             return self.missions[ref_id].get("name", ref_id)
         return self.get(ref_id).name
+
+    def compressibility(self, item_id, window_s=None, ranking="common", progress=None) -> dict:
+        """Damage Lorenz curves and compression limits of a record (edit.compressibility)."""
+        from .edit import compressibility
+        it = self.get(item_id)
+        if it.x is None:
+            raise ValueError("compressibility needs a time history")
+        p = self.params_for([it.fs])
+        out = compressibility(it.x, it.fs, p, window_s=window_s, ranking=ranking, progress=progress)
+        from .edit import lognormal_alpha_max
+        out["name"] = it.name
+        out["lognormal_alpha90"] = lognormal_alpha_max(0.9, out["kurtosis"], p.b)
+        out.pop("per_fn", None)
+        return out
 
     def sensitivity(self, rid, b_values=(), Q_values=(), progress=None):
         """FDS ratio result/target for other b and Q (target recomputed too)."""

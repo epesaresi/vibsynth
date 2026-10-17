@@ -95,9 +95,12 @@
     <h2>Fatigue Damage Spectrum, MRS and PSD</h2>
     <div class="row wrap" id="an_pick"></div>
     <div class="row"><button id="an_go">Compute / overlay</button><button class="sec" id="an_resp">Response kurtosis and std vs fn</button>
+      <button class="sec" id="an_comp">Compression limit (damage Lorenz curve)</button>
+      <label class="inline">window [s]<input id="an_cwin" placeholder="auto" size="5"></label>
       <span class="hint">Life [h] of each record is set in the Workspace table (default: record length).</span></div>
     <div class="cols2"><div id="ch_fds"></div><div id="ch_mrs"></div></div>
     <div class="cols2"><div id="ch_psd"></div><div id="ch_resp"></div></div>
+    <div class="cols2"><div id="ch_lorenz"></div><div id="an_comp_out" class="small"></div></div>
     <div id="an_exports" class="row wrap"></div>
   </section>
   <section>
@@ -196,6 +199,18 @@
         </div>
         <p class="hint">MMVSD prescribes the FDS and the kurtosis of the oscillator responses k<sub>z</sub>(f<sub>n</sub>) of the target; the Kurtosis and RMS fields are not used.</p>
       </details>
+      <details id="sy_ed" class="mm"><summary>Edit options</summary>
+        <div class="grid2">
+          <label>Window ranking<select id="sy_ed_rank"><option value="common">common (largest average retention)</option><option value="fair">fair (equalise over the oscillators)</option></select></label>
+          <label>Spectral gain beyond the limit<select id="sy_ed_gain"><option value="true">on</option><option value="false">off (editing only)</option></select></label>
+          <label>Gain cap<input id="sy_ed_gmax" value="2"></label>
+          <label>Ring-down margin [decay times]<input id="sy_ed_margin" value="2"></label>
+          <label>Cross-fade [s]<input id="sy_ed_fade" value="0.1"></label>
+          <label>Retention for the limit<input id="sy_ed_ret" value="0.9"></label>
+        </div>
+        <p class="hint">Edit keeps the most damaging stretches of the target record (Window [s] above sets the window; default 2 s or three decay times of the slowest oscillator). Up to the compression limit the test is exact for every S-N exponent; beyond it the bands that lost damage are raised by a frequency-dependent gain.</p>
+      </details>
+      <label class="inline" id="sy_ck_row"><input type="checkbox" id="sy_ck"> compressed kurtosis target (kFDS, RF, MLV, VSD, PM): the kurtosis of the record edited to the test duration</label>
       <details><summary>Batch: several seeds and / or methods</summary>
         <label class="block">Seeds<input id="sy_seeds" placeholder="e.g. 1 2 3 4 5"></label>
         <div id="sy_multi" class="checks"></div>
@@ -220,6 +235,8 @@
         <div class="cols2"><div id="ch_rs_psd"></div><div id="ch_rs_rms"></div></div>
         <div class="cols2" id="rs_kzrow"><div id="ch_rs_kz"></div><div id="ch_rs_mod"></div></div>
         <div id="rs_mminfo" class="small"></div>
+        <div class="cols2" id="rs_edrow" hidden><div id="ch_rs_lorenz"></div><div id="ch_rs_gain"></div></div>
+        <div id="rs_edinfo" class="small"></div>
         <div class="row wrap">
           <label class="inline">Time history<select id="rs_fmt"><option>mat</option><option>csv</option><option>txt</option><option>npy</option><option>wav</option></select></label><button id="rs_dl">Download</button>
           <label class="inline">Comparison curves<select id="rs_cfmt"><option>csv</option><option>xlsx</option><option>mat</option><option>json</option></select></label><button id="rs_cdl">Download</button>

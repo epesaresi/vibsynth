@@ -1,5 +1,40 @@
 # Changelog
 
+## 2.2.0 (2026-10-17)
+
+The compression limit of a record and the `edit` method; the profiles of the
+2.0 and 2.1 methods are unchanged (identical samples for the same inputs and
+seed).
+
+* **Compression limit** (`vibsynth.edit.compressibility`, `Workspace.compressibility`,
+  `analyze --compressibility`, analysis tab): damage Lorenz curves per oscillator
+  (share of the damage in the most damaging fraction of the time), mean and
+  worst curves, the largest compression that keeps 80 / 90 / 95 % of the damage
+  at every oscillator by editing alone, and the closed form for a lognormal
+  envelope.
+* **`edit` method** (`--method edit`, interface, `Workspace.synthesize(..., "edit")`):
+  windows of the record ranked by damage share (common or fair ranking), kept
+  with a ring-down margin of the slowest oscillator and joined with
+  cross-fades up to the test duration; beyond the compression limit a zero-phase
+  frequency-dependent gain brings every oscillator back on the target FDS
+  (adaptive relaxation, cap). The result carries the Lorenz curves, the limit,
+  the stretches kept, the gain per oscillator and the kurtosis of the edited
+  record; the interface shows them, the command line prints them.
+* **Compressed kurtosis target** (`--compress-kurtosis`, interface checkbox) for
+  kFDS, RF, MLV, VSD and PM: the kurtosis of the record edited to the test
+  duration replaces the record's kurtosis as target.
+* Theory manual: Part IV (Sections 12 to 15): the damage as a moment of the
+  cycle histogram, why no scaling is exact for every exponent, the Lorenz curve
+  and the limit, the lognormal closed form, the edit method and its spectral
+  gain, the kurtosis under compression, the non-stationarity matrix and the
+  response kurtosis spectrum; settings and diagnostics sections updated. The
+  numbering of Sections 1 to 11 is unchanged.
+* `tools/compression_benchmark.py` and `docs/benchmark_compression.json`: damage
+  ratio at b = 3, 5, 7, 9 for tests designed at b = 5, and the compression limit.
+* 13 new tests (Lorenz curves, rankings, closed form, method, exponent
+  robustness, compressed kurtosis, workspace, project round trip, web API,
+  command line).
+
 ## 2.1.0 (2026-10-16)
 
 New method and analyses; the profiles of the 2.0 methods are unchanged

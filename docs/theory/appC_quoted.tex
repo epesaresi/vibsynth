@@ -45,3 +45,21 @@ Welch's estimate averages the periodograms of overlapping windowed segments. Its
 true PSD smoothed over the resolution of a segment, and its relative scatter decreases as the square
 root of the number of independent segments. The program uses segments of length equal to the inverse of
 the requested resolution, a Hamming window and 50\,\% overlap.
+
+\subsection*{C.4 The non-stationarity matrix}
+
+Trapp and Wolfsteiner (\emph{International Journal of Fatigue} 146, 2021, 106115; see also their APSIPA
+2021 paper on integrated spectral kurtosis) describe a varying random vibration load by a two-frequency
+decomposition of its fourth-order moment, the non-stationarity matrix, which tells whether frequency
+bands are modulated synchronously, and from which the kurtosis of the response of a linear system
+follows. Section~\ref{sec:nsm} derives the same structure from the slowly varying spectrum of the MMVSD
+model; the exact normalisation and the estimators of the original are in the cited paper.
+
+\subsection*{C.5 Non-stationary against non-Gaussian excitation}
+
+{\v C}esnik, Slavi{\v c}, Capponi, Palmieri, Cianetti and Bolte{\v z}ar (MATEC Web of Conferences 165,
+10011, 2018) measured times to failure under stationary non-Gaussian and under amplitude-modulated
+non-stationary excitations with the same PSD. The stationary non-Gaussian excitation did not change the
+time to failure appreciably; the modulated one shortened it markedly, and the amount depended on the
+modulation rate. This is the experimental counterpart of Sections~\ref{sec:papoulis} and~\ref{sec:kzdamage}:
+only the modulation that the oscillator can follow reaches the response and the damage.

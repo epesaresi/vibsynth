@@ -62,6 +62,19 @@ of the component differ, the profile and the target no longer have the same FDS.
 recomputes the FDS of both with other values of $b$ or $Q$ and shows their ratio: a ratio that stays
 close to 1 means that the equivalence does not depend on the exact damage model.
 
+For an \code{edit} result the sensitivity card is the direct check of Section~\ref{sec:gain}: the FDS
+error at other exponents stays small where the gain is 1 and grows as $g^{\,b'-b}$ where the gain acted.
+
+\subsection{Compression limit}
+
+The analysis tab computes, for a record, the damage Lorenz curves of Section~\ref{sec:lorenz} (mean
+over the oscillators and worst oscillator) and the compression limits~\eqref{eq:alphamax} for 80, 90 and
+95\,\% of the damage, together with the lognormal closed form~\eqref{eq:lognlorenz} for the record's
+kurtosis. The window defaults to that of the \code{edit} method. The curve is read before choosing a
+test duration: at a compression within the limit the \code{edit} method gives a test that is right for
+every exponent; beyond it every method, \code{edit} included, relies on amplitude, and the choice
+between them is the choice of what else to prescribe (Section~\ref{sec:practice}).
+
 \subsection{Matching the amplitude distribution}
 
 A profile can be given exactly the amplitude distribution of the target by a monotone mapping of its
