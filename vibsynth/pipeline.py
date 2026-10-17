@@ -11,7 +11,8 @@ def run_method(ref: Reference, method: str, duration: float, *, kurtosis=None, r
                pattern=None, seed=None, iterations=30, tol=0.05, window=None, fs=None,
                tones=None, prominence_db=10.0, drift=0.0, log=None, modulation="random",
                mapping="blocks", block_s=None, lines="lines", max_excess=30.0, freq_corr=None,
-               time_corr=None, cl_anchor=0.0):
+               time_corr=None, cl_anchor=0.0, compress_kurtosis=False, ranking="common",
+               margin=2.0, fade_s=0.1, gain=True, gain_max=2.0, retention=0.9):
     """Synthesise `duration` seconds that reproduce the target.
 
     kurtosis / rms default to the target values. For the kurtosis-control
@@ -20,10 +21,26 @@ def run_method(ref: Reference, method: str, duration: float, *, kurtosis=None, r
     MMVSD prescribes the FDS and the kurtosis of the oscillator responses of
     the target; its own options are modulation, mapping, block_s, lines,
     max_excess, freq_corr, time_corr and cl_anchor (see mmvsd.synthesize).
+    `edit` keeps the damaging stretches of the target record (edit.edit);
+    its options are ranking, window, margin, fade_s, gain, gain_max and
+    retention. compress_kurtosis=True replaces the kurtosis target of the
+    kurtosis methods by the kurtosis of the record edited to `duration`
+    (manual, Section 14), which is what a compressed test should carry.
     """
     m = method.lower()
     fs = fs or ref.fs
+    if m == "edit":
+        from .edit import edit as edit_record
+        return edit_record(ref, duration, ranking=ranking, window_s=window, margin=margin, fade_s=fade_s,
+                           gain=gain, gain_max=gain_max, retention=retention, iterations=max(iterations, 1),
+                           tol=tol, log=log)
     k = kurtosis if kurtosis else ref.stats["kurtosis"]
+    if compress_kurtosis and not kurtosis and ref.x is not None and m in ("kfds", "rf", "mlv", "vsd", "pm"):
+        from .edit import compressed_kurtosis
+        k = compressed_kurtosis(ref, duration, ranking=ranking, window_s=window, margin=margin, fade_s=fade_s)
+        if log:
+            log(f"kurtosis target compressed to {k:.2f} (record edited to {duration:g} s; "
+                f"record kurtosis {ref.stats['kurtosis']:.2f})")
     segs = ref.segments or None
     common = dict(seed=seed, log=log)
     fdskw = dict(correction_iterations=iterations, tol=tol, **common)

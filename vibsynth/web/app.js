@@ -181,7 +181,11 @@ function renderPickers() {
   }
 }
 const mmSelected = () => $("#sy_method").value === "mmvsd" || $$("#sy_multi input:checked").some(i => i.value === "mmvsd");
-function showMM() { const on = mmSelected(); $("#sy_mm").hidden = !on; if (on) $("#sy_mm").open = true; }
+const edSelected = () => $("#sy_method").value === "edit" || $$("#sy_multi input:checked").some(i => i.value === "edit");
+function showMM() {
+  const on = mmSelected(); $("#sy_mm").hidden = !on; if (on) $("#sy_mm").open = true;
+  const ed = edSelected(); $("#sy_ed").hidden = !ed; if (ed) $("#sy_ed").open = true;
+}
 $("#sy_method").onchange = () => { $("#sy_mdesc").textContent = S.state ? S.state.methods[$("#sy_method").value] : ""; showMM(); };
 $("#an_go").onclick = async () => {
   const ids = $$("#an_pick input:checked").map(i => i.value); if (!ids.length) return toast("tick at least one signal, specification or mission", true);
@@ -209,6 +213,23 @@ $("#an_resp").onclick = async () => {
     if (!res) return; const L = Object.values(res), P = VChart.palette;
     chart("ch_resp", { title: "Kurtosis (solid) and std (dashed, right) of the SDOF response", xlabel: "natural frequency [Hz]", ylabel: "kurtosis", y2label: "std", height: 300 })
       .setData(L.flatMap((t, i) => [{ name: t.name + " kurtosis", x: t.fn, y: t.kurtosis, color: P[i % 8] }, { name: t.name + " std", x: t.fn, y: t.std, color: P[i % 8], dash: [5, 4], axis: "y2" }]), { xlog: true, ylog: false });
+  });
+};
+$("#an_comp").onclick = async () => {
+  const ids = $$("#an_pick input:checked").map(i => i.value).filter(i => item(i) && item(i).duration);
+  if (!ids.length) return toast("tick at least one time history", true);
+  await runJob("/api/compressibility", { ids, window_s: num($("#an_cwin").value) }, res => {
+    if (!res) return; const L = Object.values(res), P = VChart.palette;
+    const ser = L.flatMap((t, i) => [{ name: t.name + " (mean over fn)", x: t.q, y: t.mean, color: P[i % 8], width: 2 },
+      { name: t.name + " (worst fn)", x: t.q, y: t.worst, color: P[i % 8], dash: [5, 4] }]);
+    ser.push({ name: "stationary Gaussian", x: [0, 1], y: [0, 1], dash: [2, 3], color: "#bbb" });
+    chart("ch_lorenz", { title: "Damage Lorenz curve: share of the damage in the most damaging fraction of the time", xlabel: "fraction of the time kept (= 1/alpha)", ylabel: "share of the damage", height: 300 })
+      .setData(ser, { xlog: false, ylog: false });
+    $("#an_comp_out").innerHTML = `<table class="list"><tr><th class="l">record</th><th>kurtosis</th><th>window</th><th>alpha<sub>max</sub> 80 %</th><th>90 %</th><th>95 %</th><th>lognormal 90 %</th></tr>`
+      + L.map(t => `<tr><td class="l">${esc(t.name)}</td><td>${F(t.kurtosis, 3)}</td><td>${F(t.window_s, 2)} s</td>`
+        + ["80", "90", "95"].map(k => `<td>${F(t.alpha_max[k].worst, 2)} <span class="hint">(${F(t.alpha_max[k].mean, 2)})</span></td>`).join("")
+        + `<td>${F(t.lognormal_alpha90, 2)}</td></tr>`).join("")
+      + `</table><p class="hint">alpha<sub>max</sub>: largest time compression at which the worst oscillator still keeps the given share of the damage by editing alone (in brackets: mean over the oscillators). Beyond it a test can only be shortened by raising the amplitude, which makes it depend on the S-N exponent. The last column is the closed form for a lognormal envelope with the record's kurtosis, an upper estimate (theory manual, Section 12).</p>`;
   });
 };
 $("#dg_go").onclick = async () => {
@@ -327,6 +348,9 @@ $("#sy_go").onclick = async () => {
   if (mmSelected()) Object.assign(b, { modulation: $("#sy_mm_mod").value, mapping: $("#sy_mm_map").value, lines: $("#sy_mm_lines").value,
     block_s: num($("#sy_mm_block").value), freq_corr: num($("#sy_mm_fc").value), time_corr: num($("#sy_mm_tc").value),
     max_excess: num($("#sy_mm_exc").value), cl_anchor: num($("#sy_mm_anchor").value) });
+  Object.assign(b, { ranking: $("#sy_ed_rank").value, gain: $("#sy_ed_gain").value, gain_max: num($("#sy_ed_gmax").value),
+    margin: num($("#sy_ed_margin").value), fade_s: num($("#sy_ed_fade").value), retention: num($("#sy_ed_ret").value),
+    compress_kurtosis: $("#sy_ck").checked });
   if (!b.target) return toast("choose a target", true);
   await runJob("/api/synth", b, async res => { await refresh(); if (res && res.ids && res.ids.length) showResult(res.ids[res.ids.length - 1]); });
 };
@@ -384,6 +408,28 @@ async function showResult(id) {
     $("#rs_mminfo").innerHTML = `frames ${esc(mm.frames || "")} · burst width ${F(mm.freq_corr_oct, 3)} oct · burst duration ${tc ? F(tc[0], 3) + "–" + F(tc[1], 3) + " s" : "–"}`
       + (mm.pattern_mapping ? ` · record pattern (${esc(mm.pattern_mapping)}), correlation ${F(mm.tf_corr, 2)}` : " · random field");
   } else $("#rs_mminfo").textContent = "";
+  const edv = v.edit;
+  $("#rs_edrow").hidden = !edv;
+  if (edv) {
+    const q = edv.lorenz_q, ser = [
+      { name: "mean over fn", x: q, y: edv.lorenz_mean, width: 2 },
+      { name: "worst fn (sets the limit)", x: q, y: edv.lorenz_worst, color: "#c0504d", width: 1.5 },
+      { name: "lognormal closed form", x: q, y: edv.lorenz_lognormal, dash: [5, 4], color: "#888" },
+      { name: "stationary Gaussian", x: [0, 1], y: [0, 1], dash: [2, 3], color: "#bbb" },
+      { name: `requested 1/alpha = ${F(1 / edv.alpha_requested, 3)}`, x: [1 / edv.alpha_requested, 1 / edv.alpha_requested], y: [0, 1], color: "#2e8b57", width: 1 },
+      { name: `${F(100 * edv.retention, 2)} % retention`, x: [0, 1], y: [edv.retention, edv.retention], dash: [4, 4], color: "#999" }];
+    chart("ch_rs_lorenz", { title: "Damage Lorenz curve: share of the damage in the most damaging fraction of the time", xlabel: "fraction of the time kept (= 1/alpha)", ylabel: "share of the damage", height: 300 })
+      .setData(ser, { xlog: false, ylog: false });
+    chart("ch_rs_gain", { title: "Spectral gain applied after the editing (1 = editing alone)", xlabel: "natural frequency [Hz]", ylabel: "gain", height: 300 })
+      .setData([{ name: "gain", x: v.fn, y: edv.gain_fn, mode: "both" }, { name: "1", x: [v.fn[0], v.fn[v.fn.length - 1]], y: [1, 1], dash: [4, 4], color: "#999" }], { xlog: true, ylog: false });
+    const am = edv.alpha_max || {};
+    $("#rs_edinfo").innerHTML = `compression requested ${F(edv.alpha_requested, 3)}, realised ${F(edv.alpha_realised, 3)} · editing alone keeps ${F(100 * edv.retention, 2)} % of the damage at every f<sub>n</sub> up to alpha ${F(edv.alpha_limit, 3)}`
+      + ` (80 / 90 / 95 %: ${["80", "90", "95"].map(k => am[k] ? F(am[k].worst, 2) : "–").join(" / ")}; mean over f<sub>n</sub>: ${["80", "90", "95"].map(k => am[k] ? F(am[k].mean, 2) : "–").join(" / ")})`
+      + ` · ${edv.n_segments} stretches kept, window ${F(edv.window_s, 2)} s + ring-down ${F(edv.margin_s, 2)} s, ranking ${esc(edv.ranking)}`
+      + ` · windows hold ${F(100 * edv.kept_share, 2)} % of the damage (worst f<sub>n</sub> ${F(100 * edv.kept_share_min, 2)} %)`
+      + ` · kurtosis of the record ${F(edv.kurtosis_record, 3)}, of the edited record ${F(edv.kurtosis_edited, 3)}`
+      + (edv.gain_on ? ` · spectral gain x${F(Math.min(...edv.gain_fn), 3)} to x${F(Math.max(...edv.gain_fn), 3)} in ${edv.gain_iterations} steps` : " · spectral gain off");
+  } else $("#rs_edinfo").textContent = "";
   $("#rsh_out").textContent = "";
 }
 $("#rs_dl").onclick = () => download(`/api/export?what=series&fmt=${$("#rs_fmt").value}&id=${S.res}`);

@@ -1,0 +1,57 @@
+\section{Kurtosis under compression}\label{sec:compressedk}
+
+\subsection{The kurtosis of an edited record}
+
+The kurtosis of a signal compares its fourth moment with the square of its variance. Removing the
+quiet stretches of a record raises the variance of what remains; whether it raises the fourth moment as
+much depends on where the fourth moment sits. For a modulated signal the computation is immediate with
+the local variance of Section~\ref{sec:modulated}: keeping the stretches with $s$ above a threshold,
+the moments of what is kept are the conditional moments of $s$, and by~\eqref{eq:kmod}
+\begin{equation}\label{eq:kedited}
+  \kappa_{\mathrm{edited}} = 3\,\frac{\tavg{s^2 \mid \text{kept}}}{\tavg{s\mid\text{kept}}^2} .
+\end{equation}
+For the lognormal envelope of Section~\ref{sec:lognormal} the conditional moments are the truncated
+expectations computed there, with $c = 2$ and $c = 1$:
+\begin{equation}
+  \kappa_{\mathrm{edited}}(q) = 3\,e^{\tau^2}\,\frac{\Phi(u+2\tau)\,\Phi(u)}{\Phi(u+\tau)^2},
+  \qquad u = \Phi^{-1}(q),
+\end{equation}
+which tends to $3e^{\tau^2} = \kappa$ when everything is kept ($q\to1$) and decreases as the test is
+shortened (last two columns of Table~12.1): a record with kurtosis 6 edited to a quarter of its length
+has kurtosis 4.0. The measured values agree: 6.04 to 4.5 on the example record. The reason is the
+one stated above: the quiet time contributed little to the fourth moment but much to the normalisation.
+
+The decrease is a property of smooth modulation. When the kurtosis of a record comes from a few very
+large shocks, the editing keeps the shocks, the removed quiet time raises the variance only moderately,
+and the kurtosis hardly changes: 6.47 to 6.5 on the thesis reference record. The two records that look
+alike by their kurtosis behave differently under compression, which is one more reason to look at the
+Lorenz curve rather than at the kurtosis.
+
+\subsection{The kurtosis target of a compressed test}
+
+The methods that prescribe the kurtosis (kFDS, RF, and the kurtosis control methods) use by default
+the kurtosis of the target record. Section~\ref{sec:editresults} showed what this does under
+compression: a test that must carry the damage of the record in a quarter of the time \emph{and} keep
+the record's kurtosis is forced to a heavier tail than the record has, exact at the design exponent
+and two to three times too damaging at $b = 9$ on the example record. The edited record shows the
+natural target: the kurtosis that the damaging part of the record has once the quiet time is gone.
+
+\begin{result}[Compressed kurtosis target]
+For a test of duration $T/\alpha$ built from a record, the kurtosis to prescribe is the kurtosis of the
+record edited to $T/\alpha$ (Section~\ref{sec:edit}, without gain), not the kurtosis of the whole
+record. The option \code{compress\_kurtosis} (interface: ``compressed kurtosis target''; command line:
+\code{--compress-kurtosis}) computes it and uses it as the kurtosis target of kFDS, RF, MLV, VSD and PM.
+\end{result}
+
+On the example record this single change brought the $b = 9$ ratio of kFDS from 2.96 to 1.7 and
+halved its distance from the record's cycle histogram in the tail; on the thesis record, whose kurtosis
+does not drop under editing, it changed nothing, and on seven other channels it improved kFDS in most
+cases and worsened it in two where the record's kurtosis was low to begin with. It is an option, not a
+default: when the Lorenz curve says that a record is compressible, it is the right target; when the
+kurtosis comes from shocks it is neutral.
+
+The same reasoning applies to the response kurtosis spectrum $\kappa_z(\fn)$ that MMVSD prescribes.
+The $\kappa_z$ of the edited record is lower than that of the whole record at the oscillators where
+quiet time was removed, and it is the $\kappa_z$ that a compressed test should carry. Version 2.2 does
+not yet pass it to MMVSD automatically; it can be done by hand by analysing an \code{edit} result (no
+gain) as a record and using it as the MMVSD target.

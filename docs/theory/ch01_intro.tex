@@ -15,7 +15,9 @@ natural frequencies. Two signals with the same FDS damage every lightly damped c
 way, whatever its natural frequency. Every synthesis method of the package (Parts~II and~III)
 therefore starts from the target FDS and builds a signal with that FDS; the methods differ in what
 they prescribe besides the FDS: the kurtosis of the signal, its RMS value, its power spectral density,
-tonal components, or, in MMVSD, the kurtosis of the response of every oscillator.
+tonal components, or, in MMVSD, the kurtosis of the response of every oscillator. The \code{edit}
+method of Part~IV takes the opposite route: it does not synthesise but keeps the damaging stretches of
+the record itself, which makes it right for every S--N exponent, up to a limit that the record sets.
 
 \subsection{How to read this manual}
 
@@ -74,5 +76,9 @@ Part~I (Sections~\ref{sec:signals}--\ref{sec:damage}) introduces random signals,
 fatigue damage. Part~II (Sections~\ref{sec:synthesis}--\ref{sec:methods}) explains how a profile with
 a prescribed FDS is designed, synthesised and corrected, and the methods of version~2.0. Part~III
 (Sections~\ref{sec:mmvsdmodel}--\ref{sec:lines}) derives MMVSD and its treatment of
-sine-on-random blocks. Section~\ref{sec:practice} relates the theory to the settings of the program,
-and Section~\ref{sec:diagnostics} defines the diagnostics and checks of the interface.
+sine-on-random blocks. Section~\ref{sec:practice}
+relates the theory to the settings of the program, and Section~\ref{sec:diagnostics} defines the
+diagnostics and checks of the interface. Part~IV (Sections~\ref{sec:limit}--\ref{sec:nsm}, added in
+version~2.2 after the practical sections so that the numbering of versions 2.0 and 2.1 is unchanged)
+derives the compression limit of a record and the \code{edit} method, the kurtosis a compressed test
+should carry, and the non-stationarity matrix behind the response kurtosis spectrum.

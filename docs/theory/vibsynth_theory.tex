@@ -31,10 +31,10 @@
 \newcommand{\code}[1]{\texttt{#1}}
 \newcommand{\Tl}{T_{\mathrm{L}}}
 
-\title{\textbf{vibsynth 2.1 --- Theory manual}\\[0.4em]
-\large Mission synthesis, kurtosis control and MMVSD,\\ explained step by step}
+\title{\textbf{vibsynth 2.2 --- Theory manual}\\[0.4em]
+\large Mission synthesis, kurtosis control, MMVSD and the compression limit,\\ explained step by step}
 \author{Emanuele Pesaresi}
-\date{Version 2.1.0, October 2026}
+\date{Version 2.2.0, October 2026}
 
 \begin{document}
 \maketitle
@@ -47,7 +47,11 @@ so that the text can be followed by reading alone. Part~I builds the common grou
 single-degree-of-freedom oscillator, fatigue damage, the Fatigue Damage Spectrum). Part~II describes the
 mission synthesis and kurtosis control methods of version~2.0. Part~III derives the MMVSD method, which
 prescribes, in addition to the Fatigue Damage Spectrum, the kurtosis of the response of every
-oscillator, and its treatment of sine-on-random blocks. The appendices contain the longer
+oscillator, and its treatment of sine-on-random blocks. Part~IV, new in version~2.2, asks how far a
+record can be shortened at all: the damage Lorenz curve and the compression limit, the \code{edit}
+method that keeps the damaging stretches of the record and is exact for every S--N exponent up to that
+limit, the kurtosis a compressed test should carry, and the two-frequency description of
+non-stationarity behind the response kurtosis spectrum. The appendices contain the longer
 integrations (Lalanne's operator, the ramp-invariant oscillator filter) and the formulas quoted from
 the literature.
 \end{abstract}
@@ -66,6 +70,10 @@ the literature.
 \input{ch09_lines}
 \input{ch10_practice}
 \input{ch11_diagnostics}
+\input{ch12_limit}
+\input{ch13_edit}
+\input{ch14_compressedk}
+\input{ch15_nsm}
 
 \section*{Acknowledgements}
 \addcontentsline{toc}{section}{Acknowledgements}

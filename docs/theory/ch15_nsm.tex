@@ -1,0 +1,83 @@
+\section{The response kurtosis spectrum and the non-stationarity matrix}\label{sec:nsm}
+
+Part~III prescribes the kurtosis of the response of every oscillator, $\kappa_z(\fn)$, because it is
+the quantity that governs how the damage is produced (Section~\ref{sec:kzdamage}). This section places
+it in a slightly larger frame, the two-frequency description of non-stationarity introduced by Trapp and
+Wolfsteiner (Appendix~\ref{app:quoted}, C.4), shows what the frame adds and what it costs, and how it
+relates to the MMVSD model.
+
+\subsection{Fourth moment of a response from the local spectrum}
+
+Let the local PSD of the record be $G(f,t) = P(f)\,m(f,t)$ with $\tavg{m(f,\cdot)} = 1$, the
+evolutionary spectrum of Section~\ref{sec:evol}. Assume, as in Section~\ref{sec:mmvsdmodel}, that the
+modulation is slow compared with the response times, so that at every instant the response of an
+oscillator is Gaussian with the local variance
+\begin{equation}
+  s(t) = \sum_j W_j\,G(f_j,t)\,\Delta f_j
+\end{equation}
+(Lalanne's operator~\eqref{eq:WG} applied to the local spectrum, written on a frequency grid $f_j$ with
+bin widths $\Delta f_j$; $W_j = |H(f_j)|^2$ is the row of the oscillator). A locally Gaussian response
+has the fourth moment $3s(t)^2$ (Section~\ref{sec:gausskurt}), so its time average is
+\begin{equation}
+  \tavg{z^4} = 3\,\tavg{s^2} = 3\sum_{j,k} W_jW_k\,\Delta f_j\Delta f_k\;\tavg{G(f_j,t)\,G(f_k,t)} .
+\end{equation}
+The double sum contains the time average of a product of two local spectral values. Dividing it by the
+product of the mean spectra isolates the non-stationarity:
+\begin{result}[Non-stationarity matrix]
+\begin{equation}\label{eq:nsm}
+  N_{jk} = \frac{\tavg{G(f_j,t)\,G(f_k,t)}}{P(f_j)\,P(f_k)} - 1 = \tavg{m(f_j,t)\,m(f_k,t)} - 1 ,
+\end{equation}
+the covariance of the modulation between two bands. It is zero for a stationary signal. With the
+weights $w_j = W_jP(f_j)\Delta f_j/\tavg{s}$ (the share of band $j$ in the variance of the response,
+$\sum_j w_j = 1$), the kurtosis of the response is
+\begin{equation}\label{eq:kznsm}
+  \kappa_z = \frac{\tavg{z^4}}{\tavg{s}^2} = 3 + 3\sum_{j,k} w_j\,N_{jk}\,w_k = 3 + 3\,w^{\mathsf T}Nw .
+\end{equation}
+\end{result}
+The derivation is the one of Section~\ref{sec:kurtmodel} written for an arbitrary filter instead of
+the oscillator family: the matrix is the second-order statistics of the MMVSD modulation field
+$m(f,t)$ itself. Its diagonal $N_{jj} = \Var[m(f_j,\cdot)]$ is the depth of the modulation of one band,
+the quantity that MMVSD calls the excess; its off-diagonal elements say whether two bands pulsate
+together (positive), independently (zero) or in opposition (negative), which in the MMVSD field is
+set by the burst width along frequency (Section~\ref{sec:structure}).
+
+Two limiting cases make the matrix concrete. One envelope for all bands, $m(f,t) = e(t)^2$, gives
+$N_{jk} = \tavg{e^4}/\tavg{e^2}^2 - 1 = \nu$ for every pair: a matrix of rank one, and
+$\kappa_z = 3 + 3\nu\sum_{jk}w_jw_k = 3 + 3\nu$ for every filter whatsoever, the result of
+Section~\ref{sec:modulated}. Independent bands give a diagonal matrix and $\kappa_z = 3 +
+3\sum_j w_j^2 N_{jj}$: a narrow filter that sees one band receives the full depth of that band, a wide
+filter or a structure with several modes averages over many bands and its $\sum_j w_j^2$ is small, so
+its response is nearly Gaussian even when every single band pulsates strongly. Independent modulation
+averages out, common modulation does not.
+
+\subsection{What the matrix adds to $\kappa_z(\fn)$}
+
+Equation~\eqref{eq:kznsm} says that the curve $\kappa_z(\fn)$ is a one-dimensional projection of a
+two-dimensional object: one quadratic form of the matrix for each member of one family of filters (the
+oscillators of the grid with the chosen $Q$). The matrix predicts $\kappa_z$ for any linear filter: a
+different $Q$, a structure with several modes, two coupled modes whose cross terms $N_{jk}$ do not
+appear in the curve at all. Conversely, the matrix cannot be recovered from the curve: many matrices
+give the same $\kappa_z(\fn)$, and two records with the same curve can load a multi-mode component
+differently. For the oscillator family that the FDS uses, the curve is the quantity tied to the
+damage and the one MMVSD prescribes; the matrix is the diagnostic that says whether the bands of a
+record move together (rank one: kFDS is enough) or separately (MMVSD is needed), and the right
+target when the component is not a single oscillator.
+
+\subsection{Estimation}
+
+The matrix is estimated from a spectrogram (Section~\ref{sec:diagnostics}): the local spectra of the
+segments are the $G(f_j,t)$, and~\eqref{eq:nsm} is a sample covariance over the segments. Two cautions.
+It is a fourth-order statistic, so it needs long records to be stable. And the spectrogram is itself
+random: for a stationary Gaussian record a periodogram value fluctuates with a relative variance of 1
+(Appendix~\ref{app:quoted}, C.3), so the raw estimate is positive on the diagonal and near it even
+without any modulation. The program's diagnostic removes this bias by computing the same estimate on a
+phase-randomised copy of the record (same PSD, random Fourier phases, hence stationary and Gaussian)
+and subtracting it. On the example record the corrected matrix shows a common background near 0.8
+(the road level changes, modulating all bands together), stronger diagonal blocks at the body
+resonances (the potholes excite them separately), and the $\kappa_z(\fn)$ predicted from it
+through~\eqref{eq:kznsm} follows the measured curve including its two peaks, which the rank-one
+(common envelope) assumption cannot produce. The prediction overshoots at low natural frequencies and
+at the 12\,Hz peak: there the response time of the oscillator is comparable with the duration of the
+shocks, part of the modulation is averaged out (Section~\ref{sec:papoulis}), and the measured
+$\kappa_z$ stays below the value a slowly varying spectrum would give. The matrix gives an upper
+bound in that regime, the measured curve the truth.

@@ -126,6 +126,12 @@ class App:
         if kz_med is not None:
             rows.append(("Response kurtosis k_z: median |error|", "", f"{kz_med:.2f}"))
         res = it.meta.get("result", {})
+        ed = res.get("edit")
+        if ed:
+            rows.append(("Compression: requested / editing limit", f"alpha {ed['alpha_requested']:.2f}",
+                         f"alpha {ed['alpha_limit']:.2f} keeps {ed['retention']:.0%} at every fn"))
+            rows.append(("Spectral gain over fn", "", f"x{np.min(ed['gain_fn']):.2f} to x{np.max(ed['gain_fn']):.2f}"
+                         if ed.get("gain_on") else "off"))
         env = it.meta.get("envelope")
         t = np.arange(it.x.size) / it.fs
         envd = None
@@ -149,7 +155,20 @@ class App:
                 "tones": res.get("tones"),
                 "kz": {"target": ev.get("kz_target"), "result": ev.get("k_response"),
                        "model": res.get("k_model")},
-                "mmvsd": self._mmvsd_view(it, res, ref)}
+                "mmvsd": self._mmvsd_view(it, res, ref),
+                "edit": self._edit_view(res)}
+
+    @staticmethod
+    def _edit_view(res):
+        """Lorenz curves, compression limits, kept stretches and spectral gain of an edit result."""
+        e = res.get("edit")
+        if not e:
+            return None
+        keys = ("alpha_requested", "alpha_realised", "alpha_limit", "retention", "alpha_max", "lorenz_q",
+                "lorenz_mean", "lorenz_worst", "lorenz_lognormal", "segments_s", "n_segments", "window_s",
+                "margin_s", "ranking", "kept_share", "kept_share_min", "kurtosis_edited", "kurtosis_record",
+                "gain_fn", "gain_on", "gain_max", "gain_iterations", "repeats")
+        return {k: e.get(k) for k in keys}
 
     @staticmethod
     def _mmvsd_view(it, res, ref):
@@ -437,6 +456,21 @@ class Handler(BaseHTTPRequestHandler):
                         out[i] = {"fn": p.fn, "kurtosis": k, "std": s, "name": it.name}
                     return out
                 return self.send(200, APP.start("response statistics", job))
+            if u.path == "/api/compressibility":
+                d = self.jbody()
+                win = float(d["window_s"]) if d.get("window_s") not in (None, "") else None
+                ranking = d.get("ranking") or "common"
+
+                def job():
+                    out = {}
+                    for i in d["ids"]:
+                        it = ws.get(i)
+                        if it.x is None:
+                            continue
+                        APP.log(f"compressibility (damage Lorenz curve): {it.name}")
+                        out[i] = ws.compressibility(i, window_s=win, ranking=ranking, progress=APP.progress)
+                    return out
+                return self.send(200, APP.start("compressibility", job))
             if u.path == "/api/synth":
                 return self.send(200, self.synth(self.jbody()))
             if parts[:2] == ["api", "result"] and len(parts) == 4:
@@ -590,6 +624,15 @@ class Handler(BaseHTTPRequestHandler):
         for k in ("modulation", "mapping", "lines"):
             if d.get(k):
                 opts[k] = str(d[k])
+        for k in ("margin", "fade_s", "gain_max", "retention"):                 # edit
+            if d.get(k) not in (None, ""):
+                opts[k] = float(d[k])
+        if d.get("ranking"):
+            opts["ranking"] = str(d["ranking"])
+        if d.get("gain") is not None and d.get("gain") != "":
+            opts["gain"] = bool(d["gain"]) if not isinstance(d["gain"], str) else d["gain"] in ("1", "true", "on")
+        if d.get("compress_kurtosis"):
+            opts["compress_kurtosis"] = True
         dur = float(d["duration"])
 
         def job():

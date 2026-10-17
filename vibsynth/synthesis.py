@@ -815,4 +815,5 @@ METHODS = {
     "mrs": "MRS control: Gaussian with prescribed Maximum Response Spectrum",
     "sor": "Sine on random: tonal lines + random part, prescribed FDS",
     "mmvsd": "MMVSD: prescribed FDS + kurtosis spectrum of the responses (time-varying PSD)",
+    "edit": "Edit: the damaging stretches of the record itself, exact for every b up to the compression limit",
 }

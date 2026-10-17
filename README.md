@@ -9,7 +9,11 @@ vibration (or a specification, or a whole multi-situation mission) into a
 shorter shaker test profile that produces the same fatigue damage, while also
 controlling the kurtosis, the RMS or the PSD of the test. Version 2.1 adds
 **MMVSD**, which also reproduces the kurtosis of the response at every natural
-frequency, and the detection of **sine-on-random blocks** in records.
+frequency, and the detection of **sine-on-random blocks** in records. Version 2.2
+adds the **compression limit** of a record (how far it can be shortened before
+the amplitude has to rise) and the **edit** method, which keeps the damaging
+stretches of the record itself and is right for every S-N exponent up to that
+limit.
 
 The methods of version 2.0 are those of my PhD dissertation *Advanced Mission
 Synthesis Algorithms for Vibration-based Accelerated Life-testing* (University
@@ -17,10 +21,43 @@ of Bologna, 2021); MMVSD extends its variable-spectral-density idea. Everything
 is a tested Python package with a browser interface, a command line and a
 Python API. This page assumes you know what a PSD, a shaker test and an S-N
 curve are; every concept beyond that is derived step by step in the
-[theory manual](docs/theory/vibsynth_theory.pdf) (40 pages, from the
-definition of a PSD to the Jacobians of MMVSD).
+[theory manual](docs/theory/vibsynth_theory.pdf) (53 pages, from the
+definition of a PSD to the Jacobians of MMVSD and the compression limit).
 
 ![Mission editor with FDS, MRS, PSD and damage share per situation](docs/images/mission.png)
+
+## What is new in 2.2
+
+* **The compression limit.** The damage of an oscillator is the b-th moment of
+  the histogram of its rainflow cycles, so a test that is right for *every*
+  exponent b must keep the large cycles and may only drop the small ones; the
+  only way to do that on a time history is to drop the quiet stretches of the
+  record. How far this goes is the **damage Lorenz curve**: the share of the
+  damage carried by the most damaging fraction of the time, per oscillator. The
+  compression at which the worst oscillator still keeps 90 % of its damage is
+  the limit; beyond it any method, including `edit`, relies on amplitude, and
+  the test depends on the exponent. The analysis tab computes the curve and
+  the limit for any record (`analyze --compressibility` on the command line),
+  with a closed form for a lognormal envelope as a reference.
+* **`edit`**: keeps the most damaging stretches of the target record (each with
+  the ring-down of the slowest oscillator), joins them with cross-fades, and,
+  beyond the limit, raises only the bands that lost damage with a
+  frequency-dependent gain until every oscillator is back on the target FDS.
+  No synthesis: the waveform, the spectrum and the sequence of peaks are those
+  of the record. The result view shows the Lorenz curve, the limit, the kept
+  stretches and the gain per oscillator; the sensitivity card shows directly
+  how the test behaves at other exponents.
+* **Compressed kurtosis target** (option for kFDS, RF, MLV, VSD, PM): the
+  kurtosis of the record edited to the test duration instead of the kurtosis of
+  the whole record. A test that must carry the damage of the record in a
+  quarter of the time *and* keep the record's kurtosis is forced to a heavier
+  tail than the record has; the compressed target removes that bias where the
+  record's kurtosis comes from smooth modulation.
+* Theory manual, Part IV: the Lorenz curve and the limit (with the lognormal
+  closed form), the edit method, the kurtosis under compression, and the
+  non-stationarity matrix behind the response kurtosis spectrum, derived step
+  by step. `tools/compression_benchmark.py` reproduces the tables.
+* 13 new tests. The methods and profiles of versions 2.0 and 2.1 are unchanged.
 
 ## What is new in 2.1
 
@@ -50,6 +87,7 @@ definition of a PSD to the Jacobians of MMVSD).
 | has the damage and the right kurtosis **in every band** (road, engine and impacts behave differently), keeps sine-on-random blocks, or keeps the bursts where they were | `mmvsd` |
 | reproduces the peak severity (Maximum Response Spectrum) | `mrs` |
 | has the PSD and kurtosis of the field, without damage equivalence | `mlv`, `vsd`, `pm` |
+| is right for **every S-N exponent**, and a record is available: the damaging stretches of the record itself, exact up to the compression limit | `edit` |
 
 ## Install
 
@@ -87,6 +125,16 @@ python -m vibsynth synth   examples/example_road.mat --fmin 5 --fmax 200 --Q 20 
        --method mmvsd --duration 60 --modulation pattern --out test.mat --report test.png
 ```
 
+Version 2.2: the compression limit of the record and a 75 s `edit` test (the
+record compressed four times; the report shows the limit, the stretches kept
+and the gain):
+
+```
+python -m vibsynth analyze examples/example_road.mat --fmin 5 --fmax 200 --Q 10 --b 5 --compressibility
+python -m vibsynth synth   examples/example_road.mat --fmin 5 --fmax 200 --Q 10 --b 5 \
+       --method edit --duration 75 --out test.mat --report test.png
+```
+
 Two more synthetic records are generated on demand:
 `python examples/make_multisource.py` (road, engine and impact sources with
 different non-Gaussianity per band) and `python examples/make_sor.py` (engine
@@ -110,12 +158,16 @@ res = ws.synthesize(m, "kfds", 600, seed=1)
 print(ws.get(res).meta["eval"]["fds_max_error_pct"])     # about 4.5 %
 mm = ws.synthesize(rec, "mmvsd", 60, seed=1, modulation="pattern")
 print(ws.get(mm).meta["eval"]["kz_median_abs_err"])      # kurtosis of the responses
+lim = ws.compressibility(rec)                            # damage Lorenz curve of the record
+print(lim["alpha_max"]["90"]["worst"])                   # compression limit, 90 % at every fn
+ed = ws.synthesize(rec, "edit", 75)                      # the damaging stretches of the record
+print(ws.get(ed).meta["result"]["edit"]["alpha_limit"])
 open("life.vsproj", "wb").write(ws.save_project())
 ```
 
 ![Synthesis tab: result table, comparison with the target, convergence and time history](docs/images/synthesis.png)
 
-Tests: `pytest tests` (45 tests; they also run automatically on GitHub for
+Tests: `pytest tests` (58 tests; they also run automatically on GitHub for
 Linux and Windows). The interface was also tested end to end in a browser.
 `python -m vibsynth --help` lists the command line options; the method and
 damage-model settings are explained in the theory manual, Section 10.
@@ -149,6 +201,19 @@ damage-model settings are explained in the theory manual, Section 10.
   random part is designed for the residual.
 * **Closed loop.** Every FDS method measures the rainflow FDS of the realised
   profile and corrects its spectrum (frozen phases) until it meets the target.
+* **The compression limit.** The FDS at one exponent is one moment of the cycle
+  histogram; the histogram itself is the FDS at every exponent. A shorter test
+  cannot keep the whole histogram (it has fewer cycles), but it can keep its
+  tail by dropping the quiet time of the record. The damage Lorenz curve says
+  how much quiet time there is, oscillator by oscillator; its worst curve is the
+  limit. For a lognormal envelope the curve is
+  L(q) = &Phi;(&Phi;<sup>-1</sup>(q) + b&tau;/2) with &tau; = &radic;ln(&kappa;/3):
+  the burstier the record and the larger b, the more it can be shortened.
+* **Editing versus synthesis.** Up to the limit the edited record is exact for
+  every exponent; beyond it, amplitude has to do the rest, band by band, and
+  the dependence on b is confined to those bands. A synthesised profile is exact
+  at the design exponent and departs from the record as a power of its
+  effective amplitude factor at every other one.
 
 The [theory manual](docs/theory/vibsynth_theory.pdf) derives all of this step by
 step, from the definition of a PSD to the Jacobians of MMVSD.
@@ -229,6 +294,40 @@ settings as the example, full table in `docs/benchmark_thesis_record.json`:
 
 ![Multi-source record: FDS, MRS, PSD and k_z of the record, of a kFDS and of an MMVSD test; below, the k_z target and result of MMVSD and its modulation map](docs/images/mmvsd.png)
 
+**Compression limit and other exponents** (`python tools/compression_benchmark.py`,
+`docs/benchmark_compression.json`). Tests designed at b = 5, Q = 10, 17
+oscillators from 5 to 200 Hz, record compressed four times. The entries are the
+damage of the test over the damage of the record at each exponent, geometric
+mean over the oscillators, and in brackets the ratio of the largest to the
+smallest value over the oscillators (1 = the same at every oscillator):
+
+| Record | Method | b = 3 | b = 5 (design) | b = 7 | b = 9 |
+|---|---|---|---|---|---|
+| example, kurtosis 6.0, limit 3.0 | `gaussian` | 0.92 (1.4) | 1.00 (1.1) | 0.74 (1.9) | 0.48 (4.0) |
+| | `kfds` | 0.56 (1.4) | 1.00 (1.1) | 1.77 (2.0) | 2.96 (4.8) |
+| | `mmvsd` | 0.59 (1.7) | 0.99 (1.1) | 1.58 (3.0) | 2.40 (9.0) |
+| | `edit`, no gain | 0.65 (1.2) | 0.87 (1.2) | 0.96 (1.1) | 0.98 (1.1) |
+| | `edit` | 0.71 (1.1) | 0.99 (1.0) | 1.15 (1.1) | 1.25 (1.2) |
+| thesis record, kurtosis 6.5, limit 1.6 | `gaussian` | 1.49 (3.6) | 1.00 (4.1) | 0.46 (8.5) | 0.19 (29) |
+| | `kfds` | 0.98 (3.7) | 1.01 (4.3) | 0.87 (11) | 0.74 (82) |
+| | `mmvsd` | 0.63 (1.8) | 0.95 (1.4) | 1.18 (3.5) | 1.34 (13) |
+| | `edit`, no gain | 0.52 (2.7) | 0.72 (3.0) | 0.82 (2.9) | 0.86 (2.7) |
+| | `edit` | 0.64 (1.5) | 1.00 (1.1) | 1.29 (1.7) | 1.55 (2.8) |
+
+Every FDS method is right at the design exponent; the other columns tell them
+apart. The edited record without gain is the only profile whose ratio has the
+same order at every oscillator and every exponent, and the only one that is
+short of the target rather than beyond it. On the example record the
+compression is only a little beyond the limit, so the gain is small (1.01 to
+1.05) and the test keeps 98 % of the damage at b = 9 before the gain; on the
+thesis record the compression is far beyond the limit, the stationary band
+around 160 Hz needs gains up to 1.3, and the b = 9 ratio rises to 1.55, still
+with the smallest spread of all methods. The synthesis methods that prescribe
+the record's kurtosis give two to three times the damage at b = 9 on the
+example record (the kurtosis of a compressed test should be lower, see the
+compressed kurtosis target), and spreads of 13 to 82 on the thesis record,
+mostly at the top of the grid where the record has little content of its own.
+
 ## Features
 
 * **Import**: .mat (v5, v7, v7.3), CSV, TXT, NPY; several files at once; choice
@@ -246,14 +345,19 @@ settings as the example, full table in `docs/benchmark_thesis_record.json`:
 * **Multi-situation missions**: nested series and parallel groups of records and
   specifications with a life per situation; mission FDS, MRS, PSD, kurtosis,
   RMS and response kurtosis; damage share of each situation.
-* **Synthesis**: 11 methods with closed-loop FDS correction; batch over seeds and
-  methods; comparison table with the FDS and k<sub>z</sub> errors.
+* **Synthesis**: 12 methods with closed-loop FDS correction, including the `edit`
+  method of 2.2 (the damaging stretches of the record, exact for every exponent
+  up to the compression limit); batch over seeds and methods; comparison table
+  with the FDS and k<sub>z</sub> errors; compressed kurtosis target.
 * **Result checks**: FDS error, k<sub>z</sub> error, MRS ratio (yield check), PSD
   deviation, 1 s RMS distribution, envelope or modulation map, convergence;
-  sensitivity to b and Q; PDF matching; shaker stroke, velocity and
+  sensitivity to b and Q; Lorenz curve, compression limit, kept stretches and
+  spectral gain of an `edit` result; PDF matching; shaker stroke, velocity and
   acceleration check with a suggested high-pass.
 * **Diagnostics**: statistics, PDF, spectrogram, running RMS and kurtosis,
-  spectral kurtosis, kurtogram, SDOF response at any natural frequency, audio.
+  spectral kurtosis, kurtogram, SDOF response at any natural frequency, audio;
+  compression limit of a record (damage Lorenz curve, 80 / 90 / 95 % limits,
+  lognormal closed form).
 * **Export**: FDS, MRS, PSD and statistics as CSV, XLSX, MAT, JSON; time
   histories as MAT, CSV, TXT, NPY, WAV.
 * **Projects**: a .vsproj file keeps records, specifications, missions,
