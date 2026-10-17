@@ -28,34 +28,35 @@ definition of a PSD to the Jacobians of MMVSD and the compression limit).
 
 ## What is new in 2.2
 
-* **How far can a record be shortened?** A shorter test cannot keep every
-  cycle of the record; it can only drop the small ones and keep the large
-  ones, because the large cycles carry the damage at every S-N exponent. On a
-  time history this means dropping the quiet stretches. The **damage Lorenz
-  curve** shows how much quiet time there is: for each oscillator, the share of
-  the damage carried by the most damaging fraction of the time. The limit is
-  the compression at which the worst oscillator still keeps 90 % of its
-  damage. Below it a test can be right for every exponent; beyond it every
+* **How much can a record be shortened?** A shorter test cannot contain all
+  the cycles of the record. It can leave out the small ones, which do little
+  damage, but it must keep the large ones, which do most of it at every S-N
+  exponent. On a time history this means leaving out the quiet parts of the
+  record and keeping the busy ones. Version 2.2 measures how much quiet time a
+  record has: for each oscillator, how much of the damage sits in the busiest
+  10, 20, 50 % of the time. This curve sets a **compression limit**, the
+  shortening at which the worst oscillator still keeps 90 % of its damage.
+  Below the limit a test can be right for every exponent; beyond it every
   method has to raise the amplitude, and the test depends on the exponent. The
   analysis tab computes the curve and the limit for any record
   (`analyze --compressibility` on the command line).
-* **New method `edit`.** Keeps the most damaging stretches of the record,
-  joins them with cross-fades, and only beyond the limit raises the bands that
-  lost damage, with a frequency-dependent gain, until every oscillator is back
-  on the target FDS. Nothing is synthesised: waveform, spectrum and sequence of
-  peaks are those of the record. The result view shows the Lorenz curve, the
-  limit, the kept stretches and the gain per oscillator; the sensitivity card
-  shows how the test behaves at other exponents.
+* **New method `edit`.** Keeps the busiest parts of the record and joins them
+  smoothly, in their original order. Only beyond the limit does it raise the
+  amplitude, and only in the frequency bands that lost damage, until every
+  oscillator is back on the target FDS. Nothing is synthesised: the waveform,
+  the spectrum and the order of the peaks are those of the record. The result
+  view shows the curve, the limit, which parts were kept and the amplitude
+  factor per oscillator; the sensitivity card shows how the test behaves at
+  other exponents.
 * **Compressed kurtosis target** (option for kFDS, RF, MLV, VSD, PM). A test
-  that carries the damage of the record in a quarter of the time *and* keeps the
-  kurtosis of the whole record gets a heavier tail than the record has. The
-  option uses instead the kurtosis of the record edited to the test duration,
-  which is the kurtosis of the part of the record that matters.
-* **Theory manual, Part IV**: the Lorenz curve and the limit (with a closed
-  form for a lognormal envelope), the edit method, the kurtosis under
-  compression, and the non-stationarity matrix behind the response kurtosis
-  spectrum, all derived step by step. `tools/compression_benchmark.py`
-  reproduces the tables.
+  that does the damage of the record in a quarter of the time *and* keeps the
+  kurtosis of the whole record ends up with larger peaks than the record has.
+  With this option the target is the kurtosis of the busy part of the record
+  only, which is what the test actually reproduces.
+* **Theory manual, Part IV**: the compression limit (with a closed form for a
+  lognormal envelope), the edit method, the kurtosis under compression, and the
+  non-stationarity matrix behind the response kurtosis spectrum, all derived
+  step by step. `tools/compression_benchmark.py` reproduces the tables.
 * 13 new tests. The methods and profiles of versions 2.0 and 2.1 are
   unchanged.
 
