@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+* The result view of an `edit` result lists the kept stretches of the record
+  (start and end in seconds), as the documentation already said.
+* `vibsynth.edit.edit` and `spectral_gain` use the same defaults as the command
+  line and the interface (30 correction steps, tolerance 5 %).
+* Theory manual: corrected the sampling-factor values of Section 4 (0.86 and
+  0.54 for b = 8), the value of epsilon_9 in Section 12 (0.00005) and a cross
+  reference in Section 13. README wording corrected where it overstated what
+  the commands print or the report shows.
+
 ## 2.2.0 (2026-10-17)
 
 The compression limit of a record and the `edit` method; the profiles of the

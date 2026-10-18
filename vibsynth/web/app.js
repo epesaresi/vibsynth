@@ -428,7 +428,8 @@ async function showResult(id) {
       + ` · ${edv.n_segments} stretches kept, window ${F(edv.window_s, 2)} s + ring-down ${F(edv.margin_s, 2)} s, ranking ${esc(edv.ranking)}`
       + ` · windows hold ${F(100 * edv.kept_share, 2)} % of the damage (worst f<sub>n</sub> ${F(100 * edv.kept_share_min, 2)} %)`
       + ` · kurtosis of the record ${F(edv.kurtosis_record, 3)}, of the edited record ${F(edv.kurtosis_edited, 3)}`
-      + (edv.gain_on ? ` · spectral gain x${F(Math.min(...edv.gain_fn), 3)} to x${F(Math.max(...edv.gain_fn), 3)} in ${edv.gain_iterations} steps` : " · spectral gain off");
+      + (edv.gain_on ? ` · spectral gain x${F(Math.min(...edv.gain_fn), 3)} to x${F(Math.max(...edv.gain_fn), 3)} in ${edv.gain_iterations} steps` : " · spectral gain off")
+      + (Array.isArray(edv.segments_s) && edv.segments_s.length ? `<br>kept stretches of the record [s]: ${edv.segments_s.map(s => `${(+s[0]).toFixed(1)} to ${(+s[1]).toFixed(1)}`).join(", ")}` : "");
   } else $("#rs_edinfo").textContent = "";
   $("#rsh_out").textContent = "";
 }

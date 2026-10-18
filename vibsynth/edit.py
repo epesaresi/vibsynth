@@ -214,8 +214,8 @@ def assemble(x, fs, order, n_w, n_margin, n_target, fade_s):
     return y, [[int(s0), int(e)] for s0, e in segs]
 
 
-def spectral_gain(y, fs, p: FDSParams, D_target, repeats=1, iterations=10, gain_max=2.0, relax=0.8,
-                  tol=0.03, step_cap=0.15, log=None):
+def spectral_gain(y, fs, p: FDSParams, D_target, repeats=1, iterations=30, gain_max=2.0, relax=0.8,
+                  tol=0.05, step_cap=0.15, log=None):
     """Zero-phase frequency-dependent gain that brings the FDS of y to D_target.
 
     D ~ g^b at each fn, so the log-gain step is -relax log(D/D_target)/b,
@@ -254,7 +254,7 @@ def spectral_gain(y, fs, p: FDSParams, D_target, repeats=1, iterations=10, gain_
 
 # ------------------------------------------------------------------------------ method
 def edit(ref, duration, *, ranking="common", window_s=None, margin=2.0, fade_s=0.1, gain=True,
-         gain_max=2.0, retention=0.9, iterations=10, tol=0.03, log=None, **_ignored) -> SynthesisResult:
+         gain_max=2.0, retention=0.9, iterations=30, tol=0.05, log=None, **_ignored) -> SynthesisResult:
     """Method ``edit``: keep the damaging stretches of the target record.
 
     ref        Reference of a record (or of a result); missions and
