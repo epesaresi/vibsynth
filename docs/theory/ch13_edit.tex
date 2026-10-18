@@ -54,7 +54,7 @@ it is.
 
 The realised compression differs slightly from the requested one (the budget is used in whole
 windows); it is reported. If the requested duration is not shorter than the record, the record is
-returned unchanged, with a warning.
+returned unchanged (with a warning when it is longer).
 
 \subsection{Life and repetitions}
 
@@ -73,7 +73,7 @@ program therefore applies a frequency-dependent gain $g(f)$, interpolated in $\l
 nodes, as a zero-phase filter (multiplication of the Fourier transform, so no phase shift and no change
 of the peak sequence).
 
-The damage at a node scales as the $b$-th power of the gain in its band (Section~\ref{sec:design}:
+The damage at a node scales as the $b$-th power of the gain in its band (Section~\ref{sec:closedloop}:
 $D\propto\sigma_z^b$ and $\sigma_z\propto g$). Writing $r_i = D_i/D_i^{\mathrm{target}}$ for the measured
 ratio after a step, the gain of node $i$ is updated as
 \begin{equation}\label{eq:gainstep}

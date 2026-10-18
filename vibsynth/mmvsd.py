@@ -256,8 +256,8 @@ def sampling_factor(b, r):
     The extremes of a sampled narrow-band response are the samples nearest to
     the true peaks, at phase offsets t1, t2 uniform on (-pi r, pi r), so a
     range 2A is counted as A (cos t1 + cos t2) and the damage (range^b) is
-    multiplied by c_b(r) = E[((cos t1 + cos t2)/2)^b]: 0.98 at r = 0.04, 0.85
-    at r = 0.11, 0.55 at r = 0.23 for b = 8. Tabulated on r in [0, 0.5]
+    multiplied by c_b(r) = E[((cos t1 + cos t2)/2)^b]: 0.98 at r = 0.04, 0.86
+    at r = 0.11, 0.54 at r = 0.23 for b = 8. Tabulated on r in [0, 0.5]
     (Gauss-Legendre, 24 x 24 points) and interpolated.
     """
     tab = _SAMPLING_TABLES.get(float(b))
